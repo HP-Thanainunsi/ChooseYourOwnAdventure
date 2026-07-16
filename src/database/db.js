@@ -23,13 +23,36 @@ let _db = null;
 async function initDb() {
   if (_db) return _db;
 
-  // Ensure data directory exists for local file mode
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-
-  const url = process.env.TURSO_DATABASE_URL || `file:${DB_PATH}`;
+  let url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
+
+  if (!url) {
+    // If running on Vercel without Turso URL, fallback to writable /tmp directory
+    const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const dbPath = isVercel ? '/tmp/adventure.db' : DB_PATH;
+    const dataDir = path.dirname(dbPath);
+
+    try {
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+    } catch (fsErr) {
+      console.debug('Note: mkdir check inside initDb:', fsErr.message);
+    }
+
+    url = `file:${dbPath}`;
+  } else {
+    // Only attempt creating local DATA_DIR if URL starts with file:
+    if (url.startsWith('file:')) {
+      try {
+        if (!fs.existsSync(DATA_DIR)) {
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+        }
+      } catch (fsErr) {
+        console.debug('Note: DATA_DIR mkdir check:', fsErr.message);
+      }
+    }
+  }
 
   _db = createClient({
     url,
@@ -45,6 +68,14 @@ async function initDb() {
   _db.exec = async (sql) => {
     return await _db.executeMultiple(sql);
   };
+
+  // Ensure tables and seed data exist on connection
+  try {
+    const { checkAndSeedData } = require('./init');
+    await checkAndSeedData(_db);
+  } catch (seedErr) {
+    console.debug('Note: auto checkAndSeedData inside initDb:', seedErr.message);
+  }
 
   console.log(`🗄   Connected to libSQL database (${authToken ? 'Turso Cloud' : url})`);
 

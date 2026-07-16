@@ -40,12 +40,12 @@ const { getDb, queryAll, queryOne } = require('../database/db');
  *   ]
  * }
  */
-function getGameFlow(req, res) {
+async function getGameFlow(req, res) {
   try {
     const db = getDb();
 
     // Fetch all game stages sequenced by step_order (no score data)
-    const stages = queryAll(db,
+    const stages = await queryAll(db,
       `SELECT id, step_order, story_text, game_type, background_image_url
        FROM   GameStages
        ORDER  BY step_order ASC, id ASC`
@@ -53,19 +53,19 @@ function getGameFlow(req, res) {
 
     // Attach options to each stage
     // score_weight intentionally omitted from SELECT
-    const gameFlow = stages.map((stage) => ({
+    const gameFlow = await Promise.all(stages.map(async (stage) => ({
       ...stage,
       // Provide compatibility mappings for frontend components expecting type/content:
       type:    stage.game_type,
       content: stage.story_text,
-      options: queryAll(db,
+      options: await queryAll(db,
         `SELECT id, stage_id, label, image_url
          FROM   Options
          WHERE  stage_id = ?
          ORDER  BY id`,
         [stage.id]
       ),
-    }));
+    })));
 
     return res.status(200).json({
       success: true,
@@ -105,7 +105,7 @@ function getGameFlow(req, res) {
  *   "message": "..."
  * }
  */
-function calculateResult(req, res) {
+async function calculateResult(req, res) {
   try {
     const { selectedOptionIds } = req.body;
 
@@ -132,7 +132,7 @@ function calculateResult(req, res) {
     // Build a safe parameterised IN clause — one ? per ID, no string injection
     const placeholders = ids.map(() => '?').join(', ');
 
-    const scoreRow = queryOne(db,
+    const scoreRow = await queryOne(db,
       `SELECT COALESCE(SUM(score_weight), 0) AS total_score
        FROM   Options
        WHERE  id IN (${placeholders})`,
@@ -142,7 +142,7 @@ function calculateResult(req, res) {
     const totalScore = scoreRow ? scoreRow.total_score : 0;
 
     // ── Drink lookup ─────────────────────────────────────────────────────────
-    const drink = queryOne(db,
+    const drink = await queryOne(db,
       `SELECT id, name, description, image_url, min_score, max_score, abv, sweetness, location_id
        FROM   Drinks
        WHERE  min_score <= ?
@@ -164,7 +164,7 @@ function calculateResult(req, res) {
     // ── Location lookup ──────────────────────────────────────────────────────
     let location = null;
     if (drink.location_id) {
-      location = queryOne(db,
+      location = await queryOne(db,
         `SELECT id, name, address, latitude, longitude, google_maps_link
          FROM   Locations
          WHERE  id = ?`,

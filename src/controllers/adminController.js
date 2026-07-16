@@ -23,26 +23,26 @@ const { getDb, saveDb, queryAll, queryOne, runInsert } = require('../database/db
  * Fetch all stages with their options, ordered by step_order.
  * Includes score_weight since this is the admin panel.
  */
-function getAdminStages(_req, res) {
+async function getAdminStages(_req, res) {
   try {
     const db = getDb();
 
-    const stages = queryAll(db,
+    const stages = await queryAll(db,
       `SELECT id, step_order, story_text, game_type, background_image_url
        FROM   GameStages
        ORDER  BY step_order ASC, id ASC`
     );
 
-    const stagesWithOptions = stages.map((stage) => ({
+    const stagesWithOptions = await Promise.all(stages.map(async (stage) => ({
       ...stage,
-      options: queryAll(db,
+      options: await queryAll(db,
         `SELECT id, stage_id, label, image_url, score_weight
          FROM   Options
          WHERE  stage_id = ?
          ORDER  BY id ASC`,
         [stage.id]
       ),
-    }));
+    })));
 
     return res.status(200).json({
       success: true,
@@ -63,7 +63,7 @@ function getAdminStages(_req, res) {
 /**
  * Create a new stage along with its options in a single transaction.
  */
-function createAdminStage(req, res) {
+async function createAdminStage(req, res) {
   try {
     const { step_order, story_text, game_type, background_image_url = null, options = [] } = req.body;
 
@@ -85,7 +85,7 @@ function createAdminStage(req, res) {
     const db = getDb();
 
     // Check step_order unique
-    const existingOrder = queryOne(db, 'SELECT id FROM GameStages WHERE step_order = ?', [Number(step_order)]);
+    const existingOrder = await queryOne(db, 'SELECT id FROM GameStages WHERE step_order = ?', [Number(step_order)]);
     if (existingOrder) {
       return res.status(400).json({
         success: false,
@@ -93,9 +93,9 @@ function createAdminStage(req, res) {
       });
     }
 
-    db.run('BEGIN TRANSACTION');
+    await db.run('BEGIN TRANSACTION');
     try {
-      const stageId = runInsert(db,
+      const stageId = await runInsert(db,
         `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url)
          VALUES (?, ?, ?, ?)`,
         [Number(step_order), story_text.trim(), game_type, background_image_url]
@@ -105,24 +105,24 @@ function createAdminStage(req, res) {
         if (!opt.label || typeof opt.label !== 'string' || opt.label.trim() === '') {
           throw new Error('Each option must have a valid non-empty label.');
         }
-        db.run(
+        await db.run(
           `INSERT INTO Options (stage_id, label, image_url, score_weight)
            VALUES (?, ?, ?, ?)`,
           [stageId, opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0]
         );
       }
 
-      db.run('COMMIT');
+      await db.run('COMMIT');
       saveDb();
 
       // Fetch created stage with options to return
-      const createdStage = queryOne(db,
+      const createdStage = await queryOne(db,
         `SELECT id, step_order, story_text, game_type, background_image_url
          FROM   GameStages
          WHERE  id = ?`,
         [stageId]
       );
-      createdStage.options = queryAll(db,
+      createdStage.options = await queryAll(db,
         `SELECT id, stage_id, label, image_url, score_weight
          FROM   Options
          WHERE  stage_id = ?
@@ -135,7 +135,7 @@ function createAdminStage(req, res) {
         data: createdStage,
       });
     } catch (txErr) {
-      db.run('ROLLBACK');
+      await db.run('ROLLBACK');
       throw txErr;
     }
   } catch (err) {
@@ -150,7 +150,7 @@ function createAdminStage(req, res) {
 /**
  * Helper to sync options for a stage during an update.
  */
-function syncStageOptions(db, stageId, options) {
+async function syncStageOptions(db, stageId, options) {
   if (!Array.isArray(options)) return;
 
   // Keep track of option IDs provided in request
@@ -161,10 +161,10 @@ function syncStageOptions(db, stageId, options) {
   // Delete existing options not in providedOptionIds
   if (providedOptionIds.length > 0) {
     const placeholders = providedOptionIds.map(() => '?').join(', ');
-    db.run(`DELETE FROM Options WHERE stage_id = ? AND id NOT IN (${placeholders})`, [stageId, ...providedOptionIds]);
+    await db.run(`DELETE FROM Options WHERE stage_id = ? AND id NOT IN (${placeholders})`, [stageId, ...providedOptionIds]);
   } else {
     // If options array is provided but none have id, replace all options
-    db.run(`DELETE FROM Options WHERE stage_id = ?`, [stageId]);
+    await db.run(`DELETE FROM Options WHERE stage_id = ?`, [stageId]);
   }
 
   // Insert or update each option
@@ -174,16 +174,16 @@ function syncStageOptions(db, stageId, options) {
     }
     if (opt.id && Number.isInteger(Number(opt.id))) {
       const optId = Number(opt.id);
-      const exists = queryOne(db, 'SELECT id FROM Options WHERE id = ? AND stage_id = ?', [optId, stageId]);
+      const exists = await queryOne(db, 'SELECT id FROM Options WHERE id = ? AND stage_id = ?', [optId, stageId]);
       if (exists) {
-        db.run(
+        await db.run(
           `UPDATE Options SET label = ?, image_url = ?, score_weight = ? WHERE id = ? AND stage_id = ?`,
           [opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0, optId, stageId]
         );
         continue;
       }
     }
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [stageId, opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0]
     );
@@ -196,7 +196,7 @@ function syncStageOptions(db, stageId, options) {
 /**
  * Update an existing stage and its options in a single transaction.
  */
-function updateAdminStage(req, res) {
+async function updateAdminStage(req, res) {
   try {
     const stageId = Number(req.params.id);
     if (!Number.isInteger(stageId) || stageId <= 0) {
@@ -204,7 +204,7 @@ function updateAdminStage(req, res) {
     }
 
     const db = getDb();
-    const existingStage = queryOne(db,
+    const existingStage = await queryOne(db,
       `SELECT id, step_order, story_text, game_type, background_image_url
        FROM   GameStages
        WHERE  id = ?`,
@@ -233,7 +233,7 @@ function updateAdminStage(req, res) {
 
     // Check step_order unique if changed
     if (Number(step_order) !== existingStage.step_order) {
-      const orderConflict = queryOne(db, 'SELECT id FROM GameStages WHERE step_order = ? AND id != ?', [Number(step_order), stageId]);
+      const orderConflict = await queryOne(db, 'SELECT id FROM GameStages WHERE step_order = ? AND id != ?', [Number(step_order), stageId]);
       if (orderConflict) {
         return res.status(400).json({
           success: false,
@@ -242,28 +242,28 @@ function updateAdminStage(req, res) {
       }
     }
 
-    db.run('BEGIN TRANSACTION');
+    await db.run('BEGIN TRANSACTION');
     try {
-      db.run(
+      await db.run(
         `UPDATE GameStages
          SET    step_order = ?, story_text = ?, game_type = ?, background_image_url = ?
          WHERE  id = ?`,
         [Number(step_order), story_text.trim(), game_type, background_image_url, stageId]
       );
 
-      syncStageOptions(db, stageId, options);
+      await syncStageOptions(db, stageId, options);
 
-      db.run('COMMIT');
+      await db.run('COMMIT');
       saveDb();
 
       // Fetch updated stage with options
-      const updatedStage = queryOne(db,
+      const updatedStage = await queryOne(db,
         `SELECT id, step_order, story_text, game_type, background_image_url
          FROM   GameStages
          WHERE  id = ?`,
         [stageId]
       );
-      updatedStage.options = queryAll(db,
+      updatedStage.options = await queryAll(db,
         `SELECT id, stage_id, label, image_url, score_weight
          FROM   Options
          WHERE  stage_id = ?
@@ -276,7 +276,7 @@ function updateAdminStage(req, res) {
         data: updatedStage,
       });
     } catch (txErr) {
-      db.run('ROLLBACK');
+      await db.run('ROLLBACK');
       throw txErr;
     }
   } catch (err) {
@@ -294,7 +294,7 @@ function updateAdminStage(req, res) {
 /**
  * Delete a stage and cascade delete its options in a single transaction.
  */
-function deleteAdminStage(req, res) {
+async function deleteAdminStage(req, res) {
   try {
     const stageId = Number(req.params.id);
     if (!Number.isInteger(stageId) || stageId <= 0) {
@@ -302,17 +302,17 @@ function deleteAdminStage(req, res) {
     }
 
     const db = getDb();
-    const stage = queryOne(db, 'SELECT id FROM GameStages WHERE id = ?', [stageId]);
+    const stage = await queryOne(db, 'SELECT id FROM GameStages WHERE id = ?', [stageId]);
     if (!stage) {
       return res.status(404).json({ success: false, error: 'Stage not found.' });
     }
 
-    db.run('BEGIN TRANSACTION');
+    await db.run('BEGIN TRANSACTION');
     try {
       // Explicit cascade delete first
-      db.run('DELETE FROM Options WHERE stage_id = ?', [stageId]);
-      db.run('DELETE FROM GameStages WHERE id = ?', [stageId]);
-      db.run('COMMIT');
+      await db.run('DELETE FROM Options WHERE stage_id = ?', [stageId]);
+      await db.run('DELETE FROM GameStages WHERE id = ?', [stageId]);
+      await db.run('COMMIT');
       saveDb();
 
       return res.status(200).json({
@@ -320,7 +320,7 @@ function deleteAdminStage(req, res) {
         message: `Stage ${stageId} and its options deleted successfully.`,
       });
     } catch (txErr) {
-      db.run('ROLLBACK');
+      await db.run('ROLLBACK');
       throw txErr;
     }
   } catch (err) {
@@ -339,7 +339,7 @@ function deleteAdminStage(req, res) {
  * Reorder stages atomically.
  * Request body: { orderedIds: [3, 1, 2] }
  */
-function reorderAdminStages(req, res) {
+async function reorderAdminStages(req, res) {
   try {
     const { orderedIds } = req.body;
     if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
@@ -347,28 +347,28 @@ function reorderAdminStages(req, res) {
     }
 
     const db = getDb();
-    db.run('BEGIN TRANSACTION');
+    await db.run('BEGIN TRANSACTION');
     try {
       // First set all involved step_orders to negative values to avoid UNIQUE constraint conflicts
       for (let i = 0; i < orderedIds.length; i++) {
         const id = Number(orderedIds[i]);
         if (Number.isInteger(id) && id > 0) {
-          db.run('UPDATE GameStages SET step_order = ? WHERE id = ?', [-(i + 1), id]);
+          await db.run('UPDATE GameStages SET step_order = ? WHERE id = ?', [-(i + 1), id]);
         }
       }
       // Then set them to positive sequential order 1, 2, 3...
       for (let i = 0; i < orderedIds.length; i++) {
         const id = Number(orderedIds[i]);
         if (Number.isInteger(id) && id > 0) {
-          db.run('UPDATE GameStages SET step_order = ? WHERE id = ?', [i + 1, id]);
+          await db.run('UPDATE GameStages SET step_order = ? WHERE id = ?', [i + 1, id]);
         }
       }
-      db.run('COMMIT');
+      await db.run('COMMIT');
       saveDb();
 
       return res.status(200).json({ success: true, message: 'Stages reordered successfully.' });
     } catch (txErr) {
-      db.run('ROLLBACK');
+      await db.run('ROLLBACK');
       throw txErr;
     }
   } catch (err) {

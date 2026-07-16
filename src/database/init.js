@@ -254,6 +254,11 @@ async function seedData(db, forceReset = false) {
   }
 }
 
+async function checkAndSeedData(db, forceReset = false) {
+  await createSchema(db);
+  await seedData(db, forceReset);
+}
+
 // ─── Entry point ──────────────────────────────────────────────────────────────
 async function main() {
   const forceReset = process.argv.includes('--reset') || process.argv.includes('--force');
@@ -266,13 +271,16 @@ async function main() {
     await db.run('DROP TABLE IF EXISTS Drinks');
     await db.run('DROP TABLE IF EXISTS Locations');
   }
-  await createSchema(db);
-  await seedData(db, forceReset);
+  await checkAndSeedData(db, forceReset);
   saveDb();   // Persist the in-memory state if needed (no-op for libSQL)
   console.log('🎉  Database initialisation complete.');
 }
 
-main().catch((err) => {
-  console.error('❌  Initialisation failed:', err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('❌  Initialisation failed:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { checkAndSeedData, createSchema, seedData };
