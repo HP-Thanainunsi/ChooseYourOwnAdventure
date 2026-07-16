@@ -38,6 +38,17 @@ app.use(express.json({ limit: '100kb' }));
 // Serve static assets (drink images, option images, etc.)
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
+// ─── Database auto-initialisation (essential for Serverless environments like Vercel) ───
+app.use(async (_req, res, next) => {
+  try {
+    await initDb();
+    next();
+  } catch (err) {
+    console.error('[DB Middleware Error]', err);
+    res.status(500).json({ success: false, error: 'Failed to connect to database.' });
+  }
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 const gameRoutes  = require('./routes/gameRoutes');
 const adminRoutes = require('./routes/adminRoutes');

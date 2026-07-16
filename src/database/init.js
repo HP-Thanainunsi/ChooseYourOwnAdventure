@@ -28,22 +28,23 @@
 const { initDb, getDb, saveDb, runInsert, queryOne, queryAll } = require('./db');
 
 // ─── DDL ──────────────────────────────────────────────────────────────────────
-function createSchema(db) {
-  // Check if old Questions table exists or if Options has question_id, drop old tables to migrate to GameStages cleanly
-  const hasQuestions = queryOne(db, "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='Questions'");
+// ─── DDL ──────────────────────────────────────────────────────────────────────
+async function createSchema(db) {
+  // Check if old Questions table exists or if Options has question_id, drop old tables to migrate cleanly
+  const hasQuestions = await queryOne(db, "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='Questions'");
   if (hasQuestions && hasQuestions.count > 0) {
     console.log('🔄 Migrating schema: Replacing Questions table with GameStages...');
-    db.run('DROP TABLE IF EXISTS Options');
-    db.run('DROP TABLE IF EXISTS Questions');
+    await db.run('DROP TABLE IF EXISTS Options');
+    await db.run('DROP TABLE IF EXISTS Questions');
   } else {
-    const optionsInfo = queryAll(db, "PRAGMA table_info(Options)");
-    if (optionsInfo.some((col) => col.name === 'question_id')) {
+    const optionsInfo = await queryAll(db, "PRAGMA table_info(Options)");
+    if (optionsInfo && optionsInfo.some((col) => col.name === 'question_id')) {
       console.log('🔄 Upgrading Options table: replacing question_id with stage_id...');
-      db.run('DROP TABLE IF EXISTS Options');
+      await db.run('DROP TABLE IF EXISTS Options');
     }
   }
 
-  db.run(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS Locations (
       id               INTEGER PRIMARY KEY AUTOINCREMENT,
       name             TEXT    NOT NULL,
@@ -54,7 +55,7 @@ function createSchema(db) {
     )
   `);
 
-  db.run(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS Drinks (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT    NOT NULL UNIQUE,
@@ -71,14 +72,13 @@ function createSchema(db) {
 
   // Ensure location_id exists if Drinks table was already created in an earlier session
   try {
-    db.run(`ALTER TABLE Drinks ADD COLUMN location_id INTEGER REFERENCES Locations(id)`);
+    await db.run(`ALTER TABLE Drinks ADD COLUMN location_id INTEGER REFERENCES Locations(id)`);
   } catch (_e) {
-    // Column already exists or Drinks table was freshly created with location_id
     console.debug('Note: Drinks table location_id check:', _e.message);
   }
 
   // ─── GameStages (formerly Questions) ────────────────────────────────────────
-  db.run(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS GameStages (
       id                   INTEGER PRIMARY KEY AUTOINCREMENT,
       step_order           INTEGER NOT NULL UNIQUE,
@@ -89,7 +89,7 @@ function createSchema(db) {
   `);
 
   // ─── Options (now references GameStages via stage_id) ───────────────────────
-  db.run(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS Options (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       stage_id     INTEGER NOT NULL REFERENCES GameStages(id) ON DELETE CASCADE,
@@ -103,24 +103,24 @@ function createSchema(db) {
 }
 
 // ─── DML (seed) ───────────────────────────────────────────────────────────────
-function seedData(db, forceReset = false) {
+async function seedData(db, forceReset = false) {
   // Check & Seed Locations
-  const locExisting = queryOne(db, 'SELECT COUNT(*) AS n FROM Locations');
-  if (forceReset || !locExisting || locExisting.n === 0) {
-    if (forceReset) db.run('DELETE FROM Locations');
-    db.run(
+  const locExisting = await queryOne(db, 'SELECT COUNT(*) AS n FROM Locations');
+  if (forceReset || !locExisting || Number(locExisting.n) === 0) {
+    if (forceReset) await db.run('DELETE FROM Locations');
+    await db.run(
       `INSERT INTO Locations (id, name, address, latitude, longitude, google_maps_link)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [1, 'Teens of Thailand', '76 Soi Nana, Charoen Krung Rd, Pom Prap, Bangkok 10100', 13.7388, 100.5144, 'https://maps.app.goo.gl/TeensOfThailandBangkok']
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Locations (id, name, address, latitude, longitude, google_maps_link)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [2, 'Tropic City', '672/65 Soi Charoen Krung 28, Bang Rak, Bangkok 10500', 13.7287, 100.5165, 'https://maps.app.goo.gl/TropicCityBangkok']
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Locations (id, name, address, latitude, longitude, google_maps_link)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [3, 'Nana Cyber Speakeasy', 'Soi Nana (Sukhumvit Soi 4/11), Khlong Toei, Bangkok 10110', 13.7405, 100.5532, 'https://maps.app.goo.gl/NanaCyberSpeakeasyBangkok']
@@ -129,11 +129,10 @@ function seedData(db, forceReset = false) {
   }
 
   // Idempotent: check if Drinks already seeded
-  const drinksExisting = queryOne(db, 'SELECT COUNT(*) AS n FROM Drinks');
-  if (forceReset || !drinksExisting || drinksExisting.n === 0) {
-    if (forceReset) db.run('DELETE FROM Drinks');
-    // ── Drinks (adjusted score ranges -15..-1, 0..4, 5..15 to cover -6..+9 range) ──
-    db.run(
+  const drinksExisting = await queryOne(db, 'SELECT COUNT(*) AS n FROM Drinks');
+  if (forceReset || !drinksExisting || Number(drinksExisting.n) === 0) {
+    if (forceReset) await db.run('DELETE FROM Drinks');
+    await db.run(
       `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ['Sparkling Water',
@@ -145,7 +144,7 @@ function seedData(db, forceReset = false) {
        2]   // location_id: Tropic City
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ['Tropical Smoothie',
@@ -157,7 +156,7 @@ function seedData(db, forceReset = false) {
        3]   // location_id: Nana Cyber Speakeasy
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ['Dark Espresso',
@@ -174,15 +173,15 @@ function seedData(db, forceReset = false) {
   }
 
   // Idempotent: check if GameStages already seeded
-  const stagesExisting = queryOne(db, 'SELECT COUNT(*) AS n FROM GameStages');
-  if (forceReset || !stagesExisting || stagesExisting.n === 0) {
+  const stagesExisting = await queryOne(db, 'SELECT COUNT(*) AS n FROM GameStages');
+  if (forceReset || !stagesExisting || Number(stagesExisting.n) === 0) {
     if (forceReset) {
-      db.run('DELETE FROM Options');
-      db.run('DELETE FROM GameStages');
+      await db.run('DELETE FROM Options');
+      await db.run('DELETE FROM GameStages');
     }
 
     // ── Stage 1 – swipe (step_order: 1) • Suvarnabhumi Airport ───────────────────
-    const s1Id = runInsert(db,
+    const s1Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         1,
@@ -192,17 +191,17 @@ function seedData(db, forceReset = false) {
       ]
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s1Id, 'ซึมซับบรรยากาศ จิบ Cocktail เบา ๆ รับลมกรุงเทพฯ', '/images/options/chill-cocktail.png', -2]
     );
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s1Id, 'ลุยแหลกทะลุปรอท! คืนนี้ยันเช้าไม่เมาไม่กลับ!', '/images/options/party-shot.png', 2]
     );
 
     // ── Stage 2 – mixology (step_order: 2) • Sukhumvit Expressway ───────────────
-    const s2Id = runInsert(db,
+    const s2Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         2,
@@ -212,21 +211,21 @@ function seedData(db, forceReset = false) {
       ]
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s2Id, 'ใบกะเพรากรอบ & พริกขี้หนูไฟ (Spicy & Bold)', '/images/options/spicy-basil.png', 3]
     );
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s2Id, 'น้ำมะพร้าวน้ำหอมคั้นสด (Sweet & Refreshing)', '/images/options/fresh-coconut.png', -1]
     );
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s2Id, 'เหล้ารัมหมักเครื่องเทศไทยโบราณ (Herbal & Heavy)', '/images/options/spiced-rum.png', 2]
     );
 
     // ── Stage 3 – tarot (step_order: 3) • Nana Speakeasy Gate ───────────────────
-    const s3Id = runInsert(db,
+    const s3Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         3,
@@ -236,15 +235,15 @@ function seedData(db, forceReset = false) {
       ]
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s3Id, 'ไพ่ The Neon Garuda (ครุฑสายฟ้า — แก้วเข้มข้น ดุดัน ทรงพลัง)', '/images/options/tarot-garuda.png', 4]
     );
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s3Id, 'ไพ่ The Cyber Kinnaree (กินรีไซเบอร์ — แก้วหอมหวาน เย้ายวน มีเสน่ห์)', '/images/options/tarot-kinnaree.png', -3]
     );
-    db.run(
+    await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s3Id, 'ไพ่ The Street Hanuman (หนุมานลุยไฟ — แก้วเปรี้ยวซ่า ท้าทาย คาดเดาไม่ได้)', '/images/options/tarot-hanuman.png', 1]
     );
@@ -262,14 +261,14 @@ async function main() {
   const db = getDb();
   if (forceReset) {
     console.log('💥 Reset flag (--reset) detected: cleaning tables before seeding actual data...');
-    db.run('DROP TABLE IF EXISTS Options');
-    db.run('DROP TABLE IF EXISTS GameStages');
-    db.run('DROP TABLE IF EXISTS Drinks');
-    db.run('DROP TABLE IF EXISTS Locations');
+    await db.run('DROP TABLE IF EXISTS Options');
+    await db.run('DROP TABLE IF EXISTS GameStages');
+    await db.run('DROP TABLE IF EXISTS Drinks');
+    await db.run('DROP TABLE IF EXISTS Locations');
   }
-  createSchema(db);
-  seedData(db, forceReset);
-  saveDb();   // Persist the in-memory state to data/adventure.db
+  await createSchema(db);
+  await seedData(db, forceReset);
+  saveDb();   // Persist the in-memory state if needed (no-op for libSQL)
   console.log('🎉  Database initialisation complete.');
 }
 
