@@ -73,6 +73,13 @@ const SECTION_THEMES = [
   },
 ];
 
+// Default stage backgrounds fallback to ensure every stage has a rich comic background
+const DEFAULT_STAGE_BGS = [
+  '/images/stages/morning-bangkok.png',
+  '/images/stages/sukhumvit-bts.png',
+  '/images/stages/nana-speakeasy.png',
+];
+
 // ─── Individual Parallax Scrolly Section Component ────────────────────────────
 function ScrollySection({
   question,
@@ -102,7 +109,9 @@ function ScrollySection({
   const bgY = useTransform(scrollYProgress, [0, 1], [-140, 140]);
 
   // ── 3. Foreground Layer (Fastest) `translateZ(180px)` ──────────────────────
-  const fgY        = useTransform(scrollYProgress, [0, 1], [320, -320]);
+  // Tighter vertical range + boundary opacity fade prevents 2 sets of icons overlapping between sections
+  const fgY        = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const fgOpacity  = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
   const fgRotate   = useTransform(scrollYProgress, [0, 1], [-18, 18]);
   const fgOpposite = useTransform(scrollYProgress, [0, 1], [18, -18]);
 
@@ -117,6 +126,7 @@ function ScrollySection({
 
   const storyText  = question?.story_text || question?.content || 'Your spirit journey unfolds...';
   const stepNumber = question?.step_order || index + 1;
+  const bgUrl      = question?.background_image_url || DEFAULT_STAGE_BGS[index % DEFAULT_STAGE_BGS.length];
 
   return (
     <section
@@ -135,11 +145,11 @@ function ScrollySection({
         }}
         className="absolute inset-0 rounded-3xl border-4 border-[#1a1a1a] shadow-[12px_12px_0_#1a1a1a] overflow-hidden pointer-events-none flex flex-col justify-between p-8"
       >
-        {/* Custom Background Image if provided (`background_image_url`) */}
-        {question?.background_image_url && (
+        {/* Custom or Fallback Background Image (`bgUrl`) */}
+        {bgUrl && (
           <div className="absolute inset-0 z-0">
             <img
-              src={question.background_image_url}
+              src={bgUrl}
               alt="Stage background"
               className="w-full h-full object-cover opacity-60 mix-blend-overlay"
             />
@@ -233,6 +243,7 @@ function ScrollySection({
       <motion.div
         style={{
           y: fgY,
+          opacity: fgOpacity,
           transform: 'translateZ(180px)',
         }}
         className="absolute inset-0 pointer-events-none flex justify-between items-center px-4 md:px-12 z-40 overflow-visible"

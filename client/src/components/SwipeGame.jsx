@@ -564,14 +564,14 @@ export default function SwipeGame({ question, onSelect }) {
       style={{ userSelect: 'none' }}
     >
 
-      {/* ── Speech bubble (question) ────────────────────────────────────── */}
+      {/* ── Speech bubble (instruction) ─────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING_ENTER}
         style={{ width: '100%' }}
       >
-        <SpeechBubble text={question.content} />
+        <SpeechBubble text={question.instruction || '👉 ปัดซ้ายหรือขวาเพื่อเลือก Vibe ของคุณในค่ำคืนนี้! (Swipe Left or Right)'} />
       </motion.div>
 
       {/* ── Card stack ─────────────────────────────────────────────────── */}

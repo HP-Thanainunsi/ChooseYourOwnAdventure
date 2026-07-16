@@ -48,6 +48,8 @@ export default function GameController() {
   const [gameStatus,     setGameStatus]     = useState(STATUS.LOADING);
   const [result,         setResult]         = useState(null);
   const [error,          setError]          = useState(null);
+  const [preloadProgress, setPreloadProgress] = useState(0);
+  const [preloadMsg,     setPreloadMsg]     = useState('Connecting to Bangkok Speakeasy Database…');
 
   // ── Fetch game flow on mount ─────────────────────────────────────────────────
   useEffect(() => {
@@ -57,13 +59,79 @@ export default function GameController() {
   async function fetchGameFlow() {
     setError(null);
     setGameStatus(STATUS.LOADING);
+    setPreloadProgress(15);
+    setPreloadMsg('Connecting to Bangkok Speakeasy Database…');
     try {
       const res = await fetch('/api/game-flow');
       if (!res.ok) throw new Error(`Server responded ${res.status}. Is the backend running on port 3000?`);
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Unknown error from server.');
       setQuestions(data.data);
-      setGameStatus(STATUS.PLAYING);
+
+      // Collect all image URLs from stages and options
+      const urls = new Set([
+        '/images/stages/morning-bangkok.png',
+        '/images/stages/sukhumvit-bts.png',
+        '/images/stages/nana-speakeasy.png',
+        '/images/drinks/sparkling-water.png',
+        '/images/drinks/tropical-smoothie.png',
+        '/images/drinks/dark-espresso.png',
+      ]);
+
+      if (Array.isArray(data.data)) {
+        data.data.forEach((q) => {
+          if (q.background_image_url) urls.add(q.background_image_url);
+          if (Array.isArray(q.options)) {
+            q.options.forEach((opt) => {
+              if (opt.image_url) urls.add(opt.image_url);
+            });
+          }
+        });
+      }
+
+      const imageUrls = Array.from(urls).filter(Boolean);
+      let loadedCount = 0;
+      const totalImages = imageUrls.length;
+
+      setPreloadMsg(`Preloading High-Res Cyberpunk Graphics (0/${totalImages})…`);
+      setPreloadProgress(30);
+
+      // Preload images into browser cache with safety timeout
+      await Promise.all(
+        imageUrls.map((url) => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            let settled = false;
+
+            const done = () => {
+              if (settled) return;
+              settled = true;
+              loadedCount++;
+              setPreloadProgress(30 + Math.round((loadedCount / totalImages) * 70));
+              setPreloadMsg(`Preloading High-Res Cyberpunk Graphics (${loadedCount}/${totalImages})…`);
+              resolve();
+            };
+
+            const timer = setTimeout(done, 3000); // 3s max per image to prevent hanging
+
+            img.onload = () => {
+              clearTimeout(timer);
+              done();
+            };
+            img.onerror = () => {
+              clearTimeout(timer);
+              done();
+            };
+            img.src = url;
+          });
+        })
+      );
+
+      setPreloadProgress(100);
+      setPreloadMsg('All assets loaded! Starting journey…');
+      setTimeout(() => {
+        setGameStatus(STATUS.PLAYING);
+      }, 350);
     } catch (err) {
       setError(err.message);
     }
@@ -113,7 +181,7 @@ export default function GameController() {
 
   // ─── Render: Initial loading ──────────────────────────────────────────────────
   if (gameStatus === STATUS.LOADING) {
-    return <LoadingScreen message="Preparing your adventure…" />;
+    return <LoadingScreen message={preloadMsg || "Preparing your adventure…"} progressPercent={preloadProgress} />;
   }
 
   // ─── Render: Calculating result ───────────────────────────────────────────────

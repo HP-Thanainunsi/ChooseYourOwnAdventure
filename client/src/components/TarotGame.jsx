@@ -774,12 +774,12 @@ export default function TarotGame({ question, onSelect }) {
       className="flex-1 flex flex-col items-center justify-between px-4 pt-4 pb-10 gap-5 select-none"
     >
 
-      {/* ── Question text ──────────────────────────────────────────────────── */}
+      {/* ── Action instruction header ──────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.06 }}
-        className="text-center max-w-sm px-2"
+        className="text-center max-w-md px-2"
       >
         <p style={{
           fontFamily:    COMIC_FONT,
@@ -792,9 +792,12 @@ export default function TarotGame({ question, onSelect }) {
         }}>
           ◈ นิยายโบราณสยาม ◈
         </p>
-        <h2 className="text-2xl md:text-3xl font-bold text-white leading-snug">
-          {question.content}
-        </h2>
+        <h3 className="text-xl md:text-2xl font-['Chonburi'] text-[#ffd700] leading-snug tracking-wide">
+          {question.instruction || '🔮 เปิดไพ่ยิปซีชะตาค่ำคืน 🔮'}
+        </h3>
+        <p className="text-white/80 font-['Outfit'] text-sm mt-1">
+          เลือกไพ่ 1 ใบเพื่อค้นหา Spirit Drink ที่ตรงกับดวงจิตของคุณ!
+        </p>
       </motion.div>
 
       {/* ── Arc of cards ───────────────────────────────────────────────────── */}
