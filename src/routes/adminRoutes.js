@@ -16,6 +16,14 @@ const {
   updateAdminStage,
   deleteAdminStage,
   reorderAdminStages,
+  getAdminDrinks,
+  createAdminDrink,
+  updateAdminDrink,
+  deleteAdminDrink,
+  getAdminLocations,
+  createAdminLocation,
+  updateAdminLocation,
+  deleteAdminLocation,
 } = require('../controllers/adminController');
 
 const router = Router();
@@ -52,5 +60,18 @@ router.put('/stages/:id', updateAdminStage);
  * Delete a stage and cascade delete its options.
  */
 router.delete('/stages/:id', deleteAdminStage);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRINKS & STORE MAP LOCATIONS ENDPOINTS
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/drinks', getAdminDrinks);
+router.post('/drinks', createAdminDrink);
+router.put('/drinks/:id', updateAdminDrink);
+router.delete('/drinks/:id', deleteAdminDrink);
+
+router.get('/locations', getAdminLocations);
+router.post('/locations', createAdminLocation);
+router.put('/locations/:id', updateAdminLocation);
+router.delete('/locations/:id', deleteAdminLocation);
 
 module.exports = router;

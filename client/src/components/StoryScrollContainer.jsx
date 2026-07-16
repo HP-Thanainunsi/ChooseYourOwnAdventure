@@ -58,6 +58,45 @@ function SpeechBubble({ text }) {
   );
 }
 
+// ─── Comic Pop-Art Screen Wipe Overlay Component ──────────────────────────────
+function ScreenWipeOverlay({ isWiping, text }) {
+  return (
+    <AnimatePresence>
+      {isWiping && (
+        <motion.div
+          key="wipe-overlay"
+          initial={{ y: '-100%', opacity: 0 }}
+          animate={{ y: '0%', opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-auto overflow-hidden bg-[#ffde59] border-y-8 border-[#1a1a1a] shadow-[0_0_50px_rgba(255,222,89,0.8)]"
+        >
+          {/* Halftone pop-art background pattern inside wipe */}
+          <div
+            className="absolute inset-0 opacity-15 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle at center, #1a1a1a 2px, transparent 2.5px)',
+              backgroundSize: '12px 12px',
+            }}
+          />
+
+          {/* Dynamic Comic Text */}
+          <motion.div
+            initial={{ scale: 0.8, rotate: -3 }}
+            animate={{ scale: [1, 1.05, 1], rotate: [-3, 2, -1] }}
+            transition={{ repeat: Infinity, duration: 0.4 }}
+            className="relative z-10 px-8 py-6 bg-white border-4 border-[#1a1a1a] rounded-3xl shadow-[8px_8px_0_#1a1a1a] max-w-lg text-center mx-4"
+          >
+            <p className="font-['Bangers'] text-2xl sm:text-3xl md:text-4xl text-[#1a1a1a] tracking-wider m-0 uppercase leading-snug">
+              {text || '💥 CHAPTER UNLOCKED! 💥'}
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ─── Comic & Thai Foreground / Background Assets per Section ──────────────────
 const SECTION_THEMES = [
   {

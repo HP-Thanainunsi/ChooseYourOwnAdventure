@@ -377,10 +377,172 @@ async function reorderAdminStages(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DRINKS CRUD (Final Result & Image Management)
+// ─────────────────────────────────────────────────────────────────────────────
+async function getAdminDrinks(_req, res) {
+  try {
+    const db = getDb();
+    const drinks = await queryAll(db, `
+      SELECT id, name, description, image_url, min_score, max_score, abv, sweetness, location_id
+      FROM Drinks
+      ORDER BY min_score ASC, id ASC
+    `);
+    const locations = await queryAll(db, `
+      SELECT id, name, address, latitude, longitude, google_maps_link
+      FROM Locations
+      ORDER BY id ASC
+    `);
+    const drinksWithLoc = drinks.map(drink => ({
+      ...drink,
+      location: locations.find(l => l.id === drink.location_id) || null
+    }));
+    return res.status(200).json({
+      success: true,
+      data: {
+        drinks: drinksWithLoc,
+        locations: locations
+      }
+    });
+  } catch (err) {
+    console.error('[getAdminDrinks] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve drinks.' });
+  }
+}
+
+async function createAdminDrink(req, res) {
+  try {
+    const { name, description, image_url = null, min_score, max_score, abv = 3, sweetness = 3, location_id = null } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Drink name is required.' });
+    if (min_score === undefined || max_score === undefined) return res.status(400).json({ success: false, error: 'min_score and max_score are required.' });
+    if (Number(min_score) > Number(max_score)) return res.status(400).json({ success: false, error: 'min_score cannot be greater than max_score.' });
+
+    const db = getDb();
+    const { lastInsertRowid } = await runInsert(db,
+      `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name.trim(), description || '', image_url, Number(min_score), Number(max_score), Number(abv), Number(sweetness), location_id ? Number(location_id) : null]
+    );
+    saveDb();
+    return res.status(201).json({ success: true, id: lastInsertRowid });
+  } catch (err) {
+    console.error('[createAdminDrink] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to create drink.' });
+  }
+}
+
+async function updateAdminDrink(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'Invalid ID.' });
+    const { name, description, image_url = null, min_score, max_score, abv = 3, sweetness = 3, location_id = null } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Drink name is required.' });
+    if (min_score === undefined || max_score === undefined) return res.status(400).json({ success: false, error: 'min_score and max_score are required.' });
+    if (Number(min_score) > Number(max_score)) return res.status(400).json({ success: false, error: 'min_score cannot be greater than max_score.' });
+
+    const db = getDb();
+    await db.run(
+      `UPDATE Drinks SET name = ?, description = ?, image_url = ?, min_score = ?, max_score = ?, abv = ?, sweetness = ?, location_id = ? WHERE id = ?`,
+      [name.trim(), description || '', image_url, Number(min_score), Number(max_score), Number(abv), Number(sweetness), location_id ? Number(location_id) : null, id]
+    );
+    saveDb();
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[updateAdminDrink] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to update drink.' });
+  }
+}
+
+async function deleteAdminDrink(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'Invalid ID.' });
+    const db = getDb();
+    await db.run('DELETE FROM Drinks WHERE id = ?', [id]);
+    saveDb();
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[deleteAdminDrink] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to delete drink.' });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCATIONS CRUD (Store Map & GPS Coordinates)
+// ─────────────────────────────────────────────────────────────────────────────
+async function getAdminLocations(_req, res) {
+  try {
+    const db = getDb();
+    const locations = await queryAll(db, `SELECT id, name, address, latitude, longitude, google_maps_link FROM Locations ORDER BY id ASC`);
+    return res.status(200).json({ success: true, data: locations });
+  } catch (err) {
+    console.error('[getAdminLocations] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve locations.' });
+  }
+}
+
+async function createAdminLocation(req, res) {
+  try {
+    const { name, address, latitude, longitude, google_maps_link } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Store/Bar name is required.' });
+    const db = getDb();
+    const { lastInsertRowid } = await runInsert(db,
+      `INSERT INTO Locations (name, address, latitude, longitude, google_maps_link) VALUES (?, ?, ?, ?, ?)`,
+      [name.trim(), address || '', Number(latitude) || 13.7388, Number(longitude) || 100.5144, google_maps_link || '']
+    );
+    saveDb();
+    return res.status(201).json({ success: true, id: lastInsertRowid });
+  } catch (err) {
+    console.error('[createAdminLocation] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to create location.' });
+  }
+}
+
+async function updateAdminLocation(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'Invalid ID.' });
+    const { name, address, latitude, longitude, google_maps_link } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Store/Bar name is required.' });
+    const db = getDb();
+    await db.run(
+      `UPDATE Locations SET name = ?, address = ?, latitude = ?, longitude = ?, google_maps_link = ? WHERE id = ?`,
+      [name.trim(), address || '', Number(latitude) || 13.7388, Number(longitude) || 100.5144, google_maps_link || '', id]
+    );
+    saveDb();
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[updateAdminLocation] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to update location.' });
+  }
+}
+
+async function deleteAdminLocation(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'Invalid ID.' });
+    const db = getDb();
+    await db.run('DELETE FROM Locations WHERE id = ?', [id]);
+    saveDb();
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[deleteAdminLocation] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to delete location.' });
+  }
+}
+
 module.exports = {
   getAdminStages,
   createAdminStage,
   updateAdminStage,
   deleteAdminStage,
   reorderAdminStages,
+  getAdminDrinks,
+  createAdminDrink,
+  updateAdminDrink,
+  deleteAdminDrink,
+  getAdminLocations,
+  createAdminLocation,
+  updateAdminLocation,
+  deleteAdminLocation,
 };

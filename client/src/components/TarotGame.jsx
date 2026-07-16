@@ -744,6 +744,11 @@ function TarotCard({ option, cardTheme, idx, total, isFlipped, isDimmed, onFlip,
   );
 }
 
+// ── Resolved card theme ────────────────────────────────────────────────────
+function getTheme(idx) {
+  return CARD_THEMES[idx % CARD_THEMES.length];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 export default function TarotGame({ question, onSelect }) {
   const options = question.options;
@@ -760,12 +765,6 @@ export default function TarotGame({ question, onSelect }) {
     if (isSelecting) return;
     setIsSelecting(true);
     onSelect(options[flippedIdx].id);
-  }
-
-  // ── Resolved card theme ────────────────────────────────────────────────────
-  // If the question has more than 3 options, cycle through themes
-  function getTheme(idx) {
-    return CARD_THEMES[idx % CARD_THEMES.length];
   }
 
   return (

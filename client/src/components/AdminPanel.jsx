@@ -26,6 +26,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import DrinksLocationsManager from './DrinksLocationsManager';
 
 // ─── Sortable Stage Item Component for Sidebar ────────────────────────────────
 function SortableStageItem({ stage, isSelected, onSelect }) {
@@ -109,6 +110,7 @@ function SortableStageItem({ stage, isSelected, onSelect }) {
 export default function AdminPanel() {
   const [token, setToken] = useState(() => localStorage.getItem('admin_token') || '');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeModule, setActiveModule] = useState('stages'); // 'stages' | 'drinks'
   const [loginInput, setLoginInput] = useState('');
   const [loginError, setLoginError] = useState('');
 
@@ -514,7 +516,7 @@ export default function AdminPanel() {
 
   // ─── DASHBOARD SCREEN ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans flex flex-col">
       {/* Toast Notification */}
       {toast.message && (
         <div
@@ -528,8 +530,79 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* ── SIDEBAR: STAGE MANAGER ────────────────────────────────────────────── */}
-      <aside className="w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col h-auto md:h-screen sticky top-0">
+      {/* ── TOP MODULE NAVIGATION BAR ────────────────────────────────────────── */}
+      <header className="bg-slate-900 text-white px-6 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white shadow-inner">
+            ⚡
+          </div>
+          <div>
+            <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+              <span>BANGKOK NIGHTLIFE ALCHEMIST</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-900 text-indigo-300 border border-indigo-700">
+                ADMIN CMS
+              </span>
+            </h1>
+          </div>
+        </div>
+
+        {/* Module Switcher Tabs */}
+        <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+          <button
+            type="button"
+            onClick={() => setActiveModule('stages')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+              activeModule === 'stages'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>🎬 Story & Game Stages</span>
+            <span className="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-slate-900 text-slate-300">
+              {stages.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule('drinks')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+              activeModule === 'drinks'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>🍹 Final Drinks & Store Map</span>
+          </button>
+        </div>
+
+        {/* Action Right */}
+        <div className="flex items-center gap-3">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open Game in New Tab"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5"
+          >
+            <span>🎮 Preview Game</span>
+          </a>
+          <button
+            onClick={handleLogout}
+            title="Logout"
+            className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      {/* ── MODULE 1: STAGES & QUESTIONS ─────────────────────────────────────── */}
+      {activeModule === 'stages' ? (
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* ── SIDEBAR: STAGE MANAGER ────────────────────────────────────────────── */}
+          <aside className="w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col h-auto md:h-[calc(100vh-4rem)] sticky top-16">
         {/* Sidebar Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div>
@@ -895,6 +968,10 @@ export default function AdminPanel() {
           </form>
         </div>
       </main>
+        </div>
+      ) : (
+        <DrinksLocationsManager token={token} showToast={showToast} />
+      )}
     </div>
   );
 }
