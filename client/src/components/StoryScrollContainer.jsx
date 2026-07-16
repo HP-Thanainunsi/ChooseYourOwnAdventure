@@ -33,6 +33,31 @@ const COMPONENT_MAP = {
   tarot:     TarotGame,
 };
 
+const COMIC_FONT = '"Bangers", Impact, "Arial Black", cursive';
+
+// ─── Classic Comic Speech Bubble Component ─────────────────────────────────────
+function SpeechBubble({ text }) {
+  if (!text) return null;
+  return (
+    <div className="relative text-center px-4 z-10 mb-6 w-full flex justify-center">
+      <div className="inline-block bg-white border-4 border-[#1a1a1a] rounded-[22px] px-6 py-4 relative max-w-[90%] shadow-[6px_6px_0_#1a1a1a]">
+        <p className="font-['Chonburi'] text-lg sm:text-2xl md:text-3xl text-[#1a1a1a] leading-relaxed m-0">
+          {text}
+        </p>
+
+        {/* Tail — outer black triangle */}
+        <div
+          className="absolute -bottom-[22px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[22px] border-t-[#1a1a1a]"
+        />
+        {/* Tail — inner white triangle */}
+        <div
+          className="absolute -bottom-[14px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[16px] border-t-white"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Comic & Thai Foreground / Background Assets per Section ──────────────────
 const SECTION_THEMES = [
   {
@@ -198,26 +223,12 @@ function ScrollySection({
           </div>
         )}
 
-        {/* Story Text Header in Thai-Comic / Pop Art Style ('Chonburi' font) */}
-        <div className="mb-8 text-center w-full px-2">
-          <div className="inline-block bg-[#ffde59] text-[#1a1a1a] font-['Bangers'] text-sm md:text-base tracking-widest px-4 py-1 border-3 border-[#1a1a1a] shadow-[3px_3px_0_#1a1a1a] uppercase -rotate-1 mb-3">
+        {/* Story Text in Comic Speech Bubble ('Chonburi' font) */}
+        <div className="mb-6 text-center w-full px-2 flex flex-col items-center">
+          <div className="inline-block bg-[#ffde59] text-[#1a1a1a] font-['Bangers'] text-sm md:text-base tracking-widest px-4 py-1 border-3 border-[#1a1a1a] shadow-[3px_3px_0_#1a1a1a] uppercase -rotate-1 mb-4">
             ⚡ STAGE #{stepNumber} • {gameType.toUpperCase()} ACTION ⚡
           </div>
-          <h2
-            className="text-2xl md:text-4xl lg:text-5xl font-['Chonburi'] text-white leading-tight tracking-wide p-6 md:p-8 bg-[#1a1a1a]/90 border-4 border-white rounded-3xl shadow-[8px_8px_0_#ff1616,16px_16px_0_#1a1a1a] backdrop-blur-md relative overflow-hidden text-center"
-            style={{
-              textShadow: '2px 2px 0 #ff1616, -1px -1px 0 #1a1a1a',
-            }}
-          >
-            {/* Speed lines pattern behind story text */}
-            <div
-              className="absolute inset-0 opacity-15 pointer-events-none"
-              style={{
-                backgroundImage: 'repeating-linear-gradient(45deg, #ffde59 0, #ffde59 10px, transparent 10px, transparent 20px)',
-              }}
-            />
-            <span className="relative z-10 block">{storyText}</span>
-          </h2>
+          <SpeechBubble text={storyText} />
         </div>
 
         {/* Exact Matching Mini-Game Component */}
