@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --glass-bg:     rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --purple:       #a855f7;
+  --cyan:         #22d3ee;
+  --gold:         #fbbf24;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Outfit', sans-serif;
+  background: #070512;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(124, 58, 237, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 110%, rgba(6, 182, 212, 0.12) 0%, transparent 60%);
+  color: white;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle animated ambient orbs */
+#root {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ─── Glassmorphism Utilities ────────────────────────────────────────────────── */
+@layer components {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-hover {
+    @apply glass transition-all duration-300 cursor-pointer;
+  }
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  /* Gradient text utilities */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Primary CTA button */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.9rem 2rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: white;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+    box-shadow: 0 4px 24px rgba(124, 58, 237, 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 36px rgba(124, 58, 237, 0.65), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Ghost button */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.875rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    transition: all 0.25s ease;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.09); color: white; border-color: rgba(255,255,255,0.22); }
+}
+
+/* ─── Swipe Card Exit Animations ────────────────────────────────────────────── */
+@keyframes swipeExitLeft {
+  to { transform: translateX(-160%) rotate(-25deg); opacity: 0; }
+}
+@keyframes swipeExitRight {
+  to { transform: translateX(160%) rotate(25deg); opacity: 0; }
+}
+
+.swipe-exit-left  { animation: swipeExitLeft  0.38s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
+.swipe-exit-right { animation: swipeExitRight 0.38s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
+
+/* ─── Tarot 3D Card Flip ─────────────────────────────────────────────────────── */
+.tarot-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.tarot-card.is-flipped .tarot-card-inner {
+  transform: rotateY(180deg);
+}
+
+.tarot-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.25rem;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.tarot-face-front {
+  transform: rotateY(180deg);
+}
+
+/* ─── Drag-over highlight ────────────────────────────────────────────────────── */
+.drag-over-target {
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  background: rgba(168, 85, 247, 0.08) !important;
+  transform: scale(1.02);
+}
+
+/* ─── Shimmer loading skeleton ───────────────────────────────────────────────── */
+.shimmer-line {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: 0.5rem;
+}
+
+/* ─── Particle result dots ───────────────────────────────────────────────────── */
+@keyframes particleRise {
+  0%   { transform: translateY(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-120px) scale(0); opacity: 0; }
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
+
+/* ─── Selection ─────────────────────────────────────────────────────────────── */
+::selection { background: rgba(168, 85, 247, 0.35); }
+
+/* ─── Cyberpunk / Neon (DrinkResult) ──────────────────────────────────────── */
+
+/* Glitch on the drink name */
+@keyframes glitch {
+  0%,  82%, 100% { transform: translate(0);          clip-path: none; }
+  84%            { transform: translate(-3px,  1px);  }
+  86%            { transform: translate( 3px, -1px);  }
+  88%            { transform: translate(-2px,  0);    }
+  90%            { transform: translate( 0,    2px);  }
+}
+
+/* Neon text flicker */
+@keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 75%, 77%, 100% { opacity: 1; }
+  20%, 22%, 76%                     { opacity: 0.82; }
+}
+
+/* Pulsing neon border */
+@keyframes neonPulse {
+  0%, 100% { box-shadow: 0 0 8px var(--neon), 0 0 18px var(--neon), inset 0 0 8px var(--neon-dim); }
+  50%      { box-shadow: 0 0 18px var(--neon), 0 0 40px var(--neon), inset 0 0 16px var(--neon-dim); }
+}
+
+/* Stat icon drop-in */
+@keyframes statPop {
+  0%   { opacity: 0; transform: scale(0) translateY(-8px); }
+  70%  { transform: scale(1.25) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Scan-line sweep */
+@keyframes scanSweep {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 -80px; }
+}
+
+/* Replay button pulse glow */
+@keyframes replayGlow {
+  0%, 100% { box-shadow: 0 0 12px var(--neon), 0 0 28px var(--neon)80; }
+  50%      { box-shadow: 0 0 24px var(--neon), 0 0 55px var(--neon), 0 0 80px var(--neon)50; }
+}
+

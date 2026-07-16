@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Production build
+client/dist/
+
+# Database file (keep local state from being overwritten or conflict)
+data/*.db
+!data/.gitkeep
+
+# Logs & temp files
+*.log
+.DS_Store
+.env
+.env.local
+.tempmediaStorage/
+brain/
+scratch/
