@@ -285,27 +285,36 @@ function IngredientSticker({ item, theme, isDropped, isActiveOverlay }) {
   const translateStyle = { transform: CSS.Translate.toString(transform) };
 
   const baseCard = (
-    <div style={{
-      background:   theme.bg,
-      border:       '4px solid #ffffff',
-      borderRadius: '14px',
-      boxShadow:    isActiveOverlay
-        ? `0 0 0 2.5px #1a1a1a, 8px 8px 0 rgba(0,0,0,0.5), 0 0 28px ${theme.glow}`
-        : isDragging
-        ? 'none'
-        : `0 0 0 2.5px #1a1a1a, 4px 4px 0 #1a1a1a`,
-      padding:      '0.65rem 0.6rem',
-      display:      'flex',
-      flexDirection:'column',
-      alignItems:   'center',
-      gap:          '0.25rem',
-      width:        '88px',
-      cursor:       isActiveOverlay ? 'grabbing' : isDropped ? 'default' : 'grab',
-      transform:    isActiveOverlay ? 'none' : `rotate(${theme.rotate}deg)`,
-      opacity:      isDropped ? 0.22 : 1,
-      transition:   'opacity 0.3s, box-shadow 0.2s',
-      userSelect:   'none',
-    }}>
+    <motion.div
+      whileHover={!isDropped && !isActiveOverlay ? {
+        scale: 1.08,
+        y: -6,
+        boxShadow: '0 0 20px #00f0ff, 0 0 35px #ff007f, 0 0 0 3px #00f0ff',
+        transition: { type: 'spring', stiffness: 450, damping: 15 }
+      } : undefined}
+      whileTap={!isDropped ? { scale: 0.92 } : undefined}
+      style={{
+        background:   theme.bg,
+        border:       '4px solid #ffffff',
+        borderRadius: '14px',
+        boxShadow:    isActiveOverlay
+          ? `0 0 0 2.5px #1a1a1a, 8px 8px 0 rgba(0,0,0,0.5), 0 0 28px ${theme.glow}`
+          : isDragging
+          ? 'none'
+          : `0 0 0 2.5px #1a1a1a, 4px 4px 0 #1a1a1a`,
+        padding:      '0.65rem 0.6rem',
+        display:      'flex',
+        flexDirection:'column',
+        alignItems:   'center',
+        gap:          '0.25rem',
+        width:        '88px',
+        cursor:       isActiveOverlay ? 'grabbing' : isDropped ? 'default' : 'grab',
+        transform:    isActiveOverlay ? 'none' : `rotate(${theme.rotate}deg)`,
+        opacity:      isDropped ? 0.22 : 1,
+        transition:   'opacity 0.3s, box-shadow 0.2s',
+        userSelect:   'none',
+      }}
+    >
       {/* Emoji */}
       <span style={{
         fontSize:  '2.2rem',
@@ -339,7 +348,7 @@ function IngredientSticker({ item, theme, isDropped, isActiveOverlay }) {
       }}>
         {theme.subtext}
       </p>
-    </div>
+    </motion.div>
   );
 
   // For the overlay (dragging copy) we don't need dnd ref/listeners

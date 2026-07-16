@@ -10,14 +10,24 @@
 
 'use strict';
 
-const path = require('path');
-const fs   = require('fs');
+const path = require('node:path');
+const fs   = require('node:fs');
 const { createClient } = require('@libsql/client');
 
 const DB_PATH  = path.resolve(__dirname, '../../data/adventure.db');
 const DATA_DIR = path.dirname(DB_PATH);
 
 let _db = null;
+
+function ensureDirExists(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  } catch (fsErr) {
+    console.debug('Note: mkdir check inside ensureDirExists:', fsErr.message);
+  }
+}
 
 // ─── Initialise ────────────────────────────────────────────────────────────────
 async function initDb() {
@@ -30,28 +40,10 @@ async function initDb() {
     // If running on Vercel without Turso URL, fallback to writable /tmp directory
     const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
     const dbPath = isVercel ? '/tmp/adventure.db' : DB_PATH;
-    const dataDir = path.dirname(dbPath);
-
-    try {
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
-    } catch (fsErr) {
-      console.debug('Note: mkdir check inside initDb:', fsErr.message);
-    }
-
+    ensureDirExists(path.dirname(dbPath));
     url = `file:${dbPath}`;
-  } else {
-    // Only attempt creating local DATA_DIR if URL starts with file:
-    if (url.startsWith('file:')) {
-      try {
-        if (!fs.existsSync(DATA_DIR)) {
-          fs.mkdirSync(DATA_DIR, { recursive: true });
-        }
-      } catch (fsErr) {
-        console.debug('Note: DATA_DIR mkdir check:', fsErr.message);
-      }
-    }
+  } else if (url.startsWith('file:')) {
+    ensureDirExists(DATA_DIR);
   }
 
   _db = createClient({

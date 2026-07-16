@@ -141,10 +141,11 @@ export default function GameController() {
   async function submitResult(finalSelections) {
     setGameStatus(STATUS.LOADING_RESULT);
     try {
+      const flatIds = Array.isArray(finalSelections) ? finalSelections.flat().filter(id => id !== null && id !== undefined) : [];
       const res = await fetch('/api/calculate-result', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ selectedOptionIds: finalSelections }),
+        body:    JSON.stringify({ selectedOptionIds: flatIds }),
       });
       if (!res.ok) throw new Error(`Calculation failed (${res.status}).`);
       const data = await res.json();

@@ -501,10 +501,28 @@ function ComicPanelFace({ scene, optLeft, optRight }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SwipeGame({ question, onSelect }) {
-  const [optLeft, optRight] = question.options;
+  // Group options into cards/pairs: [[opt0, opt1], [opt2, opt3], ...]
+  const cards = [];
+  const opts = question?.options || [];
+  for (let i = 0; i < opts.length; i += 2) {
+    if (opts[i + 1]) {
+      cards.push([opts[i], opts[i + 1]]);
+    } else if (opts[i]) {
+      cards.push([opts[i], { ...opts[i], label: 'SKIP →', id: opts[i].id }]);
+    }
+  }
+  if (cards.length === 0) {
+    cards.push([{ label: 'Option A', id: 1 }, { label: 'Option B', id: 2 }]);
+  }
 
-  // Pick Thai scene based on question id (cycles through catalog)
-  const scene = THAI_SCENES[question.id % THAI_SCENES.length];
+  const [currentCardIdx, setCurrentCardIdx] = useState(0);
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  const [optLeft, optRight] = cards[currentCardIdx] || cards[0];
+  const currentSubQuestion = optLeft?.sub_question || optRight?.sub_question || question.instruction || '👉 ปัดซ้ายหรือขวาเพื่อเลือก Vibe ของคุณในค่ำคืนนี้!';
+
+  // Pick Thai scene based on card index + question id (cycles through catalog)
+  const scene = THAI_SCENES[(question.id + currentCardIdx) % THAI_SCENES.length];
 
   // ── Prevent double-commit ──────────────────────────────────────────────────
   const isExitingRef = useRef(false);
@@ -542,7 +560,18 @@ export default function SwipeGame({ question, onSelect }) {
 
     animate(x, target, {
       ...SPRING_FLY,
-      onComplete: () => onSelect(selectedId),
+      onComplete: () => {
+        const nextIds = [...selectedIds, selectedId];
+        if (currentCardIdx < cards.length - 1) {
+          setSelectedIds(nextIds);
+          setCurrentCardIdx(prev => prev + 1);
+          x.set(0);
+          isExitingRef.current = false;
+          setIsExiting(false);
+        } else {
+          onSelect(nextIds);
+        }
+      },
     });
   }
 
@@ -566,13 +595,17 @@ export default function SwipeGame({ question, onSelect }) {
 
       {/* ── Action instruction header ─────────────────────────────────── */}
       <motion.div
+        key={currentCardIdx}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING_ENTER}
         className="text-center max-w-md px-2"
       >
-        <h3 className="text-xl md:text-2xl font-['Chonburi'] text-[#ffde59] leading-snug tracking-wide">
-          {question.instruction || '👉 ปัดซ้ายหรือขวาเพื่อเลือก Vibe ของคุณในค่ำคืนนี้!'}
+        <div className="inline-block bg-[#00f5ff] text-[#1a1a1a] font-['Bangers'] text-xs md:text-sm tracking-widest px-3 py-1 border-2 border-[#1a1a1a] shadow-[2px_2px_0_#1a1a1a] uppercase -rotate-2 mb-2">
+          ⚡ คำถาม SWIPE ที่ {currentCardIdx + 1} / {cards.length} ⚡
+        </div>
+        <h3 className="text-lg md:text-xl font-['Chonburi'] text-[#ffde59] leading-snug tracking-wide">
+          {currentSubQuestion}
         </h3>
         <p className="text-white/80 font-['Outfit'] text-sm mt-1">
           ปัดซ้าย (NOPE) หรือปัดขวา (YEAH) เพื่อเลือกเส้นทางที่ใช่สำหรับคุณ

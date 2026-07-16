@@ -36,7 +36,7 @@ async function getAdminStages(_req, res) {
     const stagesWithOptions = await Promise.all(stages.map(async (stage) => ({
       ...stage,
       options: await queryAll(db,
-        `SELECT id, stage_id, label, image_url, score_weight
+        `SELECT id, stage_id, label, image_url, score_weight, sub_question
          FROM   Options
          WHERE  stage_id = ?
          ORDER  BY id ASC`,
@@ -106,9 +106,9 @@ async function createAdminStage(req, res) {
           throw new Error('Each option must have a valid non-empty label.');
         }
         await db.run(
-          `INSERT INTO Options (stage_id, label, image_url, score_weight)
-           VALUES (?, ?, ?, ?)`,
-          [stageId, opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0]
+          `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question)
+           VALUES (?, ?, ?, ?, ?)`,
+          [stageId, opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0, opt.sub_question || null]
         );
       }
 
@@ -123,7 +123,7 @@ async function createAdminStage(req, res) {
         [stageId]
       );
       createdStage.options = await queryAll(db,
-        `SELECT id, stage_id, label, image_url, score_weight
+        `SELECT id, stage_id, label, image_url, score_weight, sub_question
          FROM   Options
          WHERE  stage_id = ?
          ORDER  BY id ASC`,
@@ -177,15 +177,15 @@ async function syncStageOptions(db, stageId, options) {
       const exists = await queryOne(db, 'SELECT id FROM Options WHERE id = ? AND stage_id = ?', [optId, stageId]);
       if (exists) {
         await db.run(
-          `UPDATE Options SET label = ?, image_url = ?, score_weight = ? WHERE id = ? AND stage_id = ?`,
-          [opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0, optId, stageId]
+          `UPDATE Options SET label = ?, image_url = ?, score_weight = ?, sub_question = ? WHERE id = ? AND stage_id = ?`,
+          [opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0, opt.sub_question || null, optId, stageId]
         );
         continue;
       }
     }
     await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [stageId, opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0]
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [stageId, opt.label.trim(), opt.image_url || null, Number(opt.score_weight) || 0, opt.sub_question || null]
     );
   }
 }

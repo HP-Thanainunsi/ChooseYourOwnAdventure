@@ -95,9 +95,16 @@ async function createSchema(db) {
       stage_id     INTEGER NOT NULL REFERENCES GameStages(id) ON DELETE CASCADE,
       label        TEXT    NOT NULL,
       image_url    TEXT,
-      score_weight INTEGER NOT NULL DEFAULT 0
+      score_weight INTEGER NOT NULL DEFAULT 0,
+      sub_question TEXT
     )
   `);
+
+  try {
+    await db.run(`ALTER TABLE Options ADD COLUMN sub_question TEXT`);
+  } catch (_e) {
+    console.debug('Note: Options table sub_question check:', _e.message);
+  }
 
   console.log('✅  Schema created (GameStages & Options verified).');
 }
@@ -180,32 +187,48 @@ async function seedData(db, forceReset = false) {
       await db.run('DELETE FROM GameStages');
     }
 
-    // ── Stage 1 – swipe (step_order: 1) • Suvarnabhumi Airport ───────────────────
+    // ── Stage 1 – swipe (step_order: 1) • Airport to City (BKK Arrival) ────────
     const s1Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         1,
-        'ก้าวแรกแตะรันเวย์ BKK... นีออนไซเบอร์พังก์สาดแสงเข้าตา Welcome to the concrete jungle ที่ไม่เคยหลับใหล! คืนนี้จะเปิดบิลแบบ Chillout หรือพุ่งสุดเพดานแบบ Hardcore Party? ปัดการ์ดเลือก Vibe ของคุณเดี๋ยวนี้!',
+        'ก้าวพ้นประตูสุวรรณภูมิ... ไอกรุ่นความชื้นของกรุงเทพฯ ปะทะหน้าทันที พื้นถนนยางมะตอยเปียกฝนสะท้อนแสงนีออนสีชมพูส้ม กลิ่นหมูปิ้งเตาถ่านหอมกระแทกใจลอยผสมควันท่อไอเสีย — Welcome to Bangkok, city of sleepless angels. คืนนี้คุณคือตัวเอกในฟิล์ม Wong Kar-wai ฉบับสยาม... จะเปิดฉากจังหวะ Chillout ซึมซับ Vibe เมือง หรือกระโจนลงสนาม Hardcore Nightlife สุดเพดาน? ปัดการ์ดเลือกเส้นทาง แล้วกระโดดขึ้นพาหนะสู่ใจกลางเมืองเดี๋ยวนี้!',
         'swipe',
         '/images/stages/morning-bangkok.png'
       ]
     );
 
     await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s1Id, 'ซึมซับบรรยากาศ จิบ Cocktail เบา ๆ รับลมกรุงเทพฯ', '/images/options/chill-cocktail.png', -2]
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [s1Id, 'เอนหลังบน Taxi เปิดกระจกรับลม จิบ Vibe ซึมซับแสงไฟกรุงเทพฯ แบบนุ่มลึก', '/images/options/chill-cocktail.png', -2, 'คำถามที่ 1: จังหวะแรกที่แตะรันเวย์สยาม จะเลือกเดินทางเข้าเมืองแบบไหน?']
     );
     await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s1Id, 'ลุยแหลกทะลุปรอท! คืนนี้ยันเช้าไม่เมาไม่กลับ!', '/images/options/party-shot.png', 2]
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [s1Id, 'ซ้อนพี่วินทะลวงดงรถติด! เบิ้ลเครื่องกระโจนเข้าสู่ความวุ่นวายยามค่ำคืนแบบ Hardcore!', '/images/options/party-shot.png', 2, 'คำถามที่ 1: จังหวะแรกที่แตะรันเวย์สยาม จะเลือกเดินทางเข้าเมืองแบบไหน?']
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [s1Id, 'แวะหลบฝนในคาเฟ่ลับข้างทาง สั่งเครื่องดื่มอุ่นๆ ซึมซับเสียงฝนกระทบหลังคา', '/images/options/chill-cocktail.png', -1, 'คำถามที่ 2: ฝนตกลงมาเทกระหน่ำกะทันหันกลางทาง... คุณจะรับมือกับสถานการณ์นี้ยังไง?']
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [s1Id, 'ลุยต่อไม่สนฝน! ยิ่งฝนตกยิ่งสนุก ท้าทายความเปียกปอนสไตล์ Bangkok Night!', '/images/options/party-shot.png', 3, 'คำถามที่ 2: ฝนตกลงมาเทกระหน่ำกะทันหันกลางทาง... คุณจะรับมือกับสถานการณ์นี้ยังไง?']
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [s1Id, 'เดินชิลสำรวจบรรยากาศรอบๆ สังเกตผู้คนและแสงสีอย่างสงบ', '/images/options/chill-cocktail.png', 0, 'คำถามที่ 3: ก่อนถึงจุดหมาย เสียงเพลงลอยมาจากร้านสตรีทบาร์เปิดใหม่ คุณจะทำยังไง?']
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
+      [s1Id, 'พุ่งตรงเข้าไปโยกตามจังหวะบีต ทักทายคนแปลกหน้าและเปิดรับมิตรภาพใหม่!', '/images/options/party-shot.png', 2, 'คำถามที่ 3: ก่อนถึงจุดหมาย เสียงเพลงลอยมาจากร้านสตรีทบาร์เปิดใหม่ คุณจะทำยังไง?']
     );
 
-    // ── Stage 2 – mixology (step_order: 2) • Sukhumvit Expressway ───────────────
+    // ── Stage 2 – mixology (step_order: 2) • The Traffic/Ride (Sukhumvit Gridlock) ──
     const s2Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         2,
-        'รถติดวินาศสันตะโรแต่จังหวะหัวใจเราบีตเร็วกว่า! ขยับขึ้น BTS มุ่งหน้าสู่โซนลับแห่งสุขุมวิท ก่อนถึงบาร์ลับ ต้องปรุงเครื่องดื่มฉบับ Street Alchemist ในถุงพลาสติกนีออน โยนวัตถุดิบลงไปให้เข้าเส้น!',
+        'เสียงท่อมอเตอร์ไซค์กระหึ่มครางสลับเสียงแตรในดงรถติดวินาศสันตะโรบนเส้นสุขุมวิท! เหนือหัวคือสายไฟดำขลับพันกันระโยงระยศราวกับงานศิลปะร่วมสมัย สะท้อนป้ายคาราโอเกะสไตล์ยุค 90s สีแดงสดแวววับ ระหว่างที่พาหนะของคุณลัดเลาะฝ่าดงไฟท้ายสีแดงเถือก ร่างกายเรียกร้องให้เติมเชื้อเพลิงก่อนถึงปลายทาง... มาปรุงเครื่องดื่ม Street Alchemist ในถุงก๊อบแก๊บนีออน โยนวัตถุดิบลับแห่งถนนสายนี้ลงไปผสมให้เข้าเส้นเลือด!',
         'mixology',
         '/images/stages/sukhumvit-bts.png'
       ]
@@ -213,23 +236,23 @@ async function seedData(db, forceReset = false) {
 
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s2Id, 'ใบกะเพรากรอบ & พริกขี้หนูไฟ (Spicy & Bold)', '/images/options/spicy-basil.png', 3]
+      [s2Id, 'ใบกะเพรากรอบเผ็ดร้อน & พริกขี้หนูไฟจี๊ดจ๊าด (Spicy & Bold Street Heat)', '/images/options/spicy-basil.png', 3]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s2Id, 'น้ำมะพร้าวน้ำหอมคั้นสด (Sweet & Refreshing)', '/images/options/fresh-coconut.png', -1]
+      [s2Id, 'น้ำมะพร้าวน้ำหอมคั้นสดเย็นเจี๊ยบจากร้านริมทาง (Sweet & Refreshing Siam Cool)', '/images/options/fresh-coconut.png', -1]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s2Id, 'เหล้ารัมหมักเครื่องเทศไทยโบราณ (Herbal & Heavy)', '/images/options/spiced-rum.png', 2]
+      [s2Id, 'เหล้ารัมหมักสมุนไพรไทยโบราณเข้มข้น (Herbal & Heavy Alchemist Spirit)', '/images/options/spiced-rum.png', 2]
     );
 
-    // ── Stage 3 – tarot (step_order: 3) • Nana Speakeasy Gate ───────────────────
+    // ── Stage 3 – tarot (step_order: 3) • Walking into Nana Alley Speakeasy Gate ──
     const s3Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         3,
-        'ในที่สุดก็ลัดเลาะมาถึงตรอกลับย่าน Nana... หลังตู้หยอดเหรียญเก่ากึ๊กคือประตูสู่บาร์ลับที่กุมความลับของค่ำคืนนี้! แม่หมอไซเบอร์รอเปิดไพ่ยิปซีลึกล้ำ 3 ใบ ดวงชะตาของคุณจะพาไปปะทะกับ Spirit Drink แก้วไหน ดึงไพ่เปิดคำทำนายเลย!',
+        'พาหนะจอดสนิทหน้าปากตรอกลับซอยนานา... เสียงเบสหนักแน่นสั่นสะเทือนผ่านกำแพงตึกแถวจีนโบราณ กลิ่นฝนตกใหม่บนหินแกรนิตผสมกลิ่นควันธูปบางเบาลอยแตะจมูก คุณเดินลัดเลาะผ่านป้ายไฟภาษาจีนและไทยกะพริบไหว จนถึงหน้าประตูบาร์ลับที่ซ่อนอยู่หลังตู้หยอดเหรียญวินเทจ! แม่หมอไซเบอร์นั่งรออยู่ใต้แสงไฟสีแดงชาด พร้อมไพ่ยิปซีลึกล้ำ 3 ใบที่เปิดเผยจุดหมายและเครื่องดื่มแห่งดวงชะตาของค่ำคืนนี้... ดึงไพ่เปิดคำทำนายเลย!',
         'tarot',
         '/images/stages/nana-speakeasy.png'
       ]
@@ -237,18 +260,18 @@ async function seedData(db, forceReset = false) {
 
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s3Id, 'ไพ่ The Neon Garuda (ครุฑสายฟ้า — แก้วเข้มข้น ดุดัน ทรงพลัง)', '/images/options/tarot-garuda.png', 4]
+      [s3Id, 'ไพ่ The Neon Garuda (ครุฑสายฟ้า — แก้วเข้มข้น ดุดัน ทรงพลังแห่งค่ำคืน)', '/images/options/tarot-garuda.png', 4]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s3Id, 'ไพ่ The Cyber Kinnaree (กินรีไซเบอร์ — แก้วหอมหวาน เย้ายวน มีเสน่ห์)', '/images/options/tarot-kinnaree.png', -3]
+      [s3Id, 'ไพ่ The Cyber Naga (นาคาเรืองแสง — แก้วลึกล้ำ ลึกลับ เย้ายวนชวนหลงใหล)', '/images/options/tarot-kinnaree.png', -3]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
       [s3Id, 'ไพ่ The Street Hanuman (หนุมานลุยไฟ — แก้วเปรี้ยวซ่า ท้าทาย คาดเดาไม่ได้)', '/images/options/tarot-hanuman.png', 1]
     );
 
-    console.log('✅  Actual data seeded according to cms_3stage_journey_design.md (3 Stages, 8 Options).');
+    console.log('✅  Cinematic Wong Kar-wai & Thai Street Culture storyline seeded (3 Stages, 8 Options).');
   } else {
     console.log('⏭   GameStages already seeded.');
   }

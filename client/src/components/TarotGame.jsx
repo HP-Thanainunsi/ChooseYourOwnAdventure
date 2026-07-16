@@ -254,8 +254,6 @@ function YantTriangle({ gold, accent }) {
     const deg  = i * 30;
     const rad  = (deg * Math.PI) / 180;
     const r1 = 43, r2 = 37;
-    const cx = 50 + r1 * Math.sin(rad);
-    const cy = 50 - r1 * Math.cos(rad);
     const ax = 50 + r2 * Math.sin(rad);
     const ay = 50 - r2 * Math.cos(rad);
     const bRad = ((deg - 8) * Math.PI) / 180;
@@ -274,8 +272,8 @@ function YantTriangle({ gold, accent }) {
         stroke={gold} strokeWidth="0.6" opacity="0.4" />
 
       {/* 12 small protective border triangles */}
-      {borderTris.map((pts, i) => (
-        <polygon key={i} points={pts}
+      {borderTris.map((pts) => (
+        <polygon key={pts} points={pts}
           fill={`${accent}22`} stroke={gold} strokeWidth="0.7" />
       ))}
 
@@ -301,9 +299,9 @@ function YantTriangle({ gold, accent }) {
       />
 
       {/* 6 hexagon vertex dots */}
-      {hex.split(' ').map((pt, i) => {
+      {hex.split(' ').map((pt) => {
         const [x, y] = pt.split(',').map(Number);
-        return <circle key={i} cx={x} cy={y} r="2.5" fill={gold} />;
+        return <circle key={pt} cx={x} cy={y} r="2.5" fill={gold} />;
       })}
 
       {/* Central bindu (dot) */}
@@ -372,8 +370,8 @@ function CardBack({ theme, isHovered }) {
         { top: '5px',  right: '5px'  },
         { bottom: '5px', left: '5px' },
         { bottom: '5px', right: '5px'},
-      ].map((pos, i) => (
-        <div key={i} style={{
+      ].map((pos) => (
+        <div key={pos.top + (pos.left || pos.right)} style={{
           position: 'absolute',
           width:    8, height: 8,
           background: GOLD,
@@ -456,7 +454,7 @@ function CardFront({ option, theme, isFlipped, onCountdownComplete }) {
   }, [isFlipped]);
 
   // Parse option label: "The High Priestess – mystery and intuition"
-  const parts    = (option.label ?? '').split(/\s*[–-]\s*/);
+  const parts    = (option.label ?? '').split(/[–-]/).map(s => s.trim());
   const cardName = parts[0] ?? option.label;
   const tagline  = parts[1] ?? '';
 
@@ -522,8 +520,8 @@ function CardFront({ option, theme, isFlipped, onCountdownComplete }) {
         <HalftoneDots color={theme.illusDot} size={8} />
 
         {/* Panel marks — top corners (like comic crop marks) */}
-        {[{ top: 3, left: 3 }, { top: 3, right: 3 }].map((pos, i) => (
-          <div key={i} style={{
+        {[{ top: 3, left: 3 }, { top: 3, right: 3 }].map((pos) => (
+          <div key={`crop-${pos.left || pos.right}`} style={{
             position: 'absolute',
             width: 6, height: 6,
             border: `1.5px solid ${theme.frontAccent}60`,
@@ -692,10 +690,11 @@ function TarotCard({ option, cardTheme, idx, total, isFlipped, isDimmed, onFlip,
       }}
       whileHover={
         !isFlipped && !isDimmed
-          ? { y: yBase - 22, scale: 1.08 }
+          ? { y: yBase - 24, scale: 1.09, filter: 'drop-shadow(0 0 20px #00f0ff) drop-shadow(0 0 35px #ff007f)' }
           : undefined
       }
-      transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+      whileTap={!isFlipped && !isDimmed ? { scale: 0.94 } : undefined}
+      transition={{ type: 'spring', stiffness: 420, damping: 20 }}
       onClick={() => !isDimmed && onFlip(idx)}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={()   => setIsHovered(false)}

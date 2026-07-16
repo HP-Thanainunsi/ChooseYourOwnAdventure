@@ -294,22 +294,50 @@ export default function AdminPanel() {
     setFormData((prev) => {
       const updatedOptions = [...prev.options];
       updatedOptions[index] = { ...updatedOptions[index], [field]: value };
+      if (field === 'sub_question' && prev.game_type === 'swipe') {
+        const pairIndex = index % 2 === 0 ? index + 1 : index - 1;
+        if (updatedOptions[pairIndex]) {
+          updatedOptions[pairIndex] = { ...updatedOptions[pairIndex], sub_question: value };
+        }
+      }
       return { ...prev, options: updatedOptions };
     });
   };
 
   const handleAddOption = () => {
-    setFormData((prev) => ({
-      ...prev,
-      options: [...prev.options, { label: 'New Option', image_url: '', score_weight: 1 }],
-    }));
+    setFormData((prev) => {
+      if (prev.game_type === 'swipe') {
+        const nextQNum = Math.floor(prev.options.length / 2) + 1;
+        return {
+          ...prev,
+          options: [
+            ...prev.options,
+            { label: 'ปัดซ้าย: ตัวเลือก A', image_url: '', score_weight: -1, sub_question: `คำถามที่ ${nextQNum}: คำถามใหม่สำหรับ Swipe Card` },
+            { label: 'ปัดขวา: ตัวเลือก B', image_url: '', score_weight: 1, sub_question: `คำถามที่ ${nextQNum}: คำถามใหม่สำหรับ Swipe Card` },
+          ],
+        };
+      }
+      return {
+        ...prev,
+        options: [...prev.options, { label: 'New Option', image_url: '', score_weight: 1, sub_question: '' }],
+      };
+    });
   };
 
   const handleRemoveOption = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      options: prev.options.filter((_, idx) => idx !== index),
-    }));
+    setFormData((prev) => {
+      if (prev.game_type === 'swipe') {
+        const pairIndex = index % 2 === 0 ? index + 1 : index - 1;
+        return {
+          ...prev,
+          options: prev.options.filter((_, idx) => idx !== index && idx !== pairIndex),
+        };
+      }
+      return {
+        ...prev,
+        options: prev.options.filter((_, idx) => idx !== index),
+      };
+    });
   };
 
   // File upload via /api/upload-photo
@@ -712,7 +740,7 @@ export default function AdminPanel() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>Add Option</span>
+                  <span>{formData.game_type === 'swipe' ? '+ Add Swipe Question (Pair of 2 Options)' : 'Add Option'}</span>
                 </button>
               </div>
 
@@ -732,84 +760,113 @@ export default function AdminPanel() {
                   formData.options.map((opt, index) => (
                     <div
                       key={index}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row items-start md:items-center gap-4 transition-all hover:border-slate-300"
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col gap-3 transition-all hover:border-slate-300"
                     >
-                      <span className="w-6 h-6 rounded-full bg-slate-200 font-bold text-xs flex items-center justify-center text-slate-700 flex-shrink-0">
-                        {index + 1}
-                      </span>
+                      {formData.game_type === 'swipe' && (
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">
+                              {Math.floor(index / 2) + 1}
+                            </span>
+                            Swipe Card #{Math.floor(index / 2) + 1} • {index % 2 === 0 ? '👈 ตัวเลือกปัดซ้าย (Left Option)' : '👉 ตัวเลือกปัดขวา (Right Option)'}
+                          </span>
+                        </div>
+                      )}
 
-                      {/* Label Input */}
-                      <div className="flex-1 min-w-0 w-full md:w-auto">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                          Option Label / Text
-                        </label>
-                        <input
-                          type="text"
-                          value={opt.label}
-                          onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-                          placeholder="e.g. Slow stretch with morning breeze"
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-medium"
-                          required
-                        />
-                      </div>
-
-                      {/* Image URL Input */}
-                      <div className="flex-1 min-w-0 w-full md:w-auto">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                          Image URL / Upload
-                        </label>
-                        <div className="flex items-center gap-2">
+                      {/* Sub-Question / Card Prompt (For Swipe cards or specific option prompts) */}
+                      {(formData.game_type === 'swipe' && index % 2 === 0) && (
+                        <div className="w-full">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-1">
+                            💬 คำถามประจำการ์ด (Swipe Card Question Prompt)
+                          </label>
                           <input
                             type="text"
-                            value={opt.image_url || ''}
-                            onChange={(e) => handleOptionChange(index, 'image_url', e.target.value)}
-                            placeholder="/images/options/slow.png"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500"
+                            value={opt.sub_question || ''}
+                            onChange={(e) => handleOptionChange(index, 'sub_question', e.target.value)}
+                            placeholder="e.g. คำถามที่ 1: จังหวะแรกที่แตะรันเวย์สยาม..."
+                            className="w-full px-3 py-2 border border-indigo-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-semibold bg-indigo-50/30 text-slate-900"
                           />
-                          <label className="px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg cursor-pointer text-slate-600 transition-colors flex-shrink-0" title="Upload option image">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              disabled={uploadingImage}
-                              onChange={(e) => {
-                                if (e.target.files?.[0]) {
-                                  handleFileUpload(e.target.files[0], (url) => handleOptionChange(index, 'image_url', url));
-                                }
-                              }}
-                            />
-                          </label>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Score Weight Input */}
-                      <div className="w-28 flex-shrink-0">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-1">
-                          Score Weight
-                        </label>
-                        <input
-                          type="number"
-                          value={opt.score_weight}
-                          onChange={(e) => handleOptionChange(index, 'score_weight', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 text-center bg-indigo-50/50"
-                          required
-                        />
-                      </div>
+                      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                        <span className="w-6 h-6 rounded-full bg-slate-200 font-bold text-xs flex items-center justify-center text-slate-700 flex-shrink-0">
+                          {index + 1}
+                        </span>
 
-                      {/* Remove Option Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveOption(index)}
-                        title="Remove Option"
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors self-end md:self-center"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        {/* Label Input */}
+                        <div className="flex-1 min-w-0 w-full md:w-auto">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                            Option Label / Text
+                          </label>
+                          <input
+                            type="text"
+                            value={opt.label}
+                            onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                            placeholder="e.g. Slow stretch with morning breeze"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-medium"
+                            required
+                          />
+                        </div>
+
+                        {/* Image URL Input */}
+                        <div className="flex-1 min-w-0 w-full md:w-auto">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                            Image URL / Upload
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={opt.image_url || ''}
+                              onChange={(e) => handleOptionChange(index, 'image_url', e.target.value)}
+                              placeholder="/images/options/slow.png"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500"
+                            />
+                            <label className="px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg cursor-pointer text-slate-600 transition-colors flex-shrink-0" title="Upload option image">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingImage}
+                                onChange={(e) => {
+                                  if (e.target.files?.[0]) {
+                                    handleFileUpload(e.target.files[0], (url) => handleOptionChange(index, 'image_url', url));
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Score Weight Input */}
+                        <div className="w-28 flex-shrink-0">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-1">
+                            Score Weight
+                          </label>
+                          <input
+                            type="number"
+                            value={opt.score_weight}
+                            onChange={(e) => handleOptionChange(index, 'score_weight', e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 text-center bg-indigo-50/50"
+                            required
+                          />
+                        </div>
+
+                        {/* Remove Option Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOption(index)}
+                          title={formData.game_type === 'swipe' ? "Remove Swipe Question (both left & right options)" : "Remove Option"}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors self-end md:self-center"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}

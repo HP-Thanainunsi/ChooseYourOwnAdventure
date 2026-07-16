@@ -30,6 +30,7 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion';
+import FinalDestination from './FinalDestination';
 
 // ─── Per-Drink Comic Themes ───────────────────────────────────────────────────
 const COMIC_THEMES = {
@@ -110,8 +111,8 @@ function ActionLinesBackground({ color = '#ffd700' }) {
         transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
       >
         <g opacity="0.18">
-          {lines.map((pts, idx) => (
-            <polygon key={idx} points={pts} fill={color} />
+          {lines.map((pts) => (
+            <polygon key={pts} points={pts} fill={color} />
           ))}
         </g>
       </motion.svg>
@@ -130,6 +131,7 @@ function ActionLinesBackground({ color = '#ffd700' }) {
 // ─── Main Comic Splash Page Component ─────────────────────────────────────────
 export default function DrinkResult({ result, onRestart }) {
   const [copied, setCopied] = useState(false);
+  const [showCinematic, setShowCinematic] = useState(false);
 
   // Mouse tracking values for 3D spring tilt
   const mouseX = useMotionValue(0.5);
@@ -190,6 +192,19 @@ export default function DrinkResult({ result, onRestart }) {
       setTimeout(() => setCopied(false), 2600);
     }
   };
+
+  if (showCinematic) {
+    return (
+      <FinalDestination
+        drinkImage={drink?.image_url || '/images/drinks/tropical-smoothie.png'}
+        drinkName={drink?.name || 'THE BANGKOK ALCHEMIST'}
+        storyText={drink?.description || 'ค่ำคืนอันยาวนานสิ้นสุดลงที่นี่... สปิริตของคุณตรงกับความเย้ายวน ลึกลับ และเต็มไปด้วยชีวิตชีวาของมหานครที่ไม่เคยหลับใหล'}
+        barName={location?.name || 'HIDDEN SPEAKEASY'}
+        googleMapsUrl={location?.google_maps_link || `https://maps.google.com/?q=${encodeURIComponent(location?.name || '')}`}
+        onRestart={onRestart}
+      />
+    );
+  }
 
   return (
     <div
@@ -479,10 +494,20 @@ export default function DrinkResult({ result, onRestart }) {
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 280, damping: 20, delay: 0.45 }}
-        className="relative z-10 w-full max-w-md flex flex-col sm:flex-row items-center justify-center gap-4 mt-4 mb-2"
+        className="relative z-10 w-full max-w-md flex flex-col items-center justify-center gap-3 mt-4 mb-2"
       >
-        {/* Replay Journey Sticker Button */}
         <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => setShowCinematic(true)}
+          className="w-full py-3.5 px-4 bg-[#00f5ff] hover:bg-[#00e5ff] text-[#1a1a1a] font-['Bangers'] text-lg tracking-widest uppercase border-4 border-[#1a1a1a] shadow-[4px_4px_0_#1a1a1a] rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-transform"
+        >
+          <span>🎬</span> VIEW FULLSCREEN CINEMATIC FINALE (ดูหน้าผลลัพธ์แบบหนัง)
+        </motion.button>
+
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Replay Journey Sticker Button */}
+          <motion.button
           whileHover={{ scale: 1.05, rotate: -4 }}
           whileTap={{ scale: 0.95 }}
           onClick={onRestart}
@@ -492,14 +517,15 @@ export default function DrinkResult({ result, onRestart }) {
         </motion.button>
 
         {/* Share To Story Sticker Button */}
-        <motion.button
-          whileHover={{ scale: 1.05, rotate: 4 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleShare}
-          className="w-full sm:w-1/2 py-3.5 px-4 bg-gradient-to-r from-[#00f5ff] to-[#ff007f] text-white font-['Bangers'] text-lg tracking-widest uppercase border-4 border-white shadow-[0_0_0_3px_#1a1a1a,5px_5px_0_#1a1a1a] rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-transform rotate-1"
-        >
-          <span>📸</span> SHARE TO STORY
-        </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05, rotate: 4 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleShare}
+            className="w-full sm:w-1/2 py-3.5 px-4 bg-gradient-to-r from-[#ff2a85] to-[#ff007f] text-white font-['Bangers'] text-lg tracking-widest uppercase border-4 border-white shadow-[0_0_0_3px_#1a1a1a,5px_5px_0_#1a1a1a] rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-transform rotate-1"
+          >
+            <span>📸</span> SHARE TO STORY
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Toast notification for Share copy */}

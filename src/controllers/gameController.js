@@ -59,7 +59,7 @@ async function getGameFlow(req, res) {
       type:    stage.game_type,
       content: stage.story_text,
       options: await queryAll(db,
-        `SELECT id, stage_id, label, image_url
+        `SELECT id, stage_id, label, image_url, sub_question
          FROM   Options
          WHERE  stage_id = ?
          ORDER  BY id`,

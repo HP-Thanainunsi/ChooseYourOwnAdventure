@@ -133,6 +133,10 @@ function ScrollySection({
   // ── 1. Background Layer (Slowest) `translateZ(-250px)` ─────────────────────
   const bgY = useTransform(scrollYProgress, [0, 1], [-140, 140]);
 
+  // ── 1.5. Middle Parallax Layer (Tangled Power Lines & Street Signs) `translateZ(-140px)` ──
+  const midY  = useTransform(scrollYProgress, [0, 1], [-90, 90]);
+  const wireY = useTransform(scrollYProgress, [0, 1], [50, -50]);
+
   // ── 3. Foreground Layer (Fastest) `translateZ(180px)` ──────────────────────
   // Tighter vertical range + boundary opacity fade prevents 2 sets of icons overlapping between sections
   const fgY        = useTransform(scrollYProgress, [0, 1], [100, -100]);
@@ -209,6 +213,36 @@ function ScrollySection({
         </div>
       </motion.div>
 
+      {/* ─── LAYER 1.5: MIDDLE CONTINUOUS PARALLAX (TANGLED POWER LINES & STREET FOOD SIGNS) ─── */}
+      <motion.div
+        style={{
+          y: wireY,
+          transform: 'translateZ(-140px) scale(1.16)',
+        }}
+        className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex flex-col justify-between py-10"
+      >
+        {/* Tangled Thai Power Lines Banner */}
+        <div className="w-full opacity-60 border-t-[4px] border-b-[3px] border-[#1a1a1a] h-12 relative flex items-center justify-around -rotate-1 bg-gradient-to-r from-[#1a1a1a]/80 via-[#ff007f]/40 to-[#1a1a1a]/80 shadow-[0_4px_15px_rgba(0,0,0,0.5)]">
+          <span className="text-2xl animate-pulse">⚡</span>
+          <span className="text-xs md:text-sm font-['Bangers'] text-[#ffde59] tracking-widest">
+            ⚡ BANGKOK TANGLED POWER LINES • SIAMESE VOLTAGE #108 ⚡
+          </span>
+          <span className="text-2xl animate-pulse">⚡</span>
+        </div>
+
+        {/* Floating Street Food & Neon Tuk-Tuk Signs */}
+        <motion.div style={{ y: midY }} className="flex justify-between w-full px-4 sm:px-8 opacity-90">
+          <div className="bg-[#ff007f] border-3 border-white px-3.5 py-1 rounded-xl shadow-[0_0_20px_#ff007f,4px_4px_0_#1a1a1a] text-white font-['Chonburi'] text-xs sm:text-sm -rotate-6 flex items-center gap-1.5">
+            <span>🍢</span>
+            <span>หมาล่าเยาวราช</span>
+          </div>
+          <div className="bg-[#00f0ff] border-3 border-[#1a1a1a] px-3.5 py-1 rounded-xl shadow-[0_0_20px_#00f0ff,4px_4px_0_#1a1a1a] text-[#1a1a1a] font-['Chonburi'] text-xs sm:text-sm rotate-6 flex items-center gap-1.5">
+            <span>🧋</span>
+            <span>ชาไทยนมสดสะท้านเมือง</span>
+          </div>
+        </motion.div>
+      </motion.div>
+
       {/* ─── LAYER 2: MIDDLE LAYER (STORY TEXT & INTERACTIVE MINI-GAME) `translateZ(0px)` ── */}
       <div
         className={`relative z-20 w-full max-w-3xl flex flex-col items-center transition-all duration-500 ${
@@ -259,22 +293,28 @@ function ScrollySection({
         }}
         className="absolute inset-0 pointer-events-none flex justify-between items-center px-4 md:px-12 z-40 overflow-visible"
       >
-        {/* Left Floating Sound Sticker */}
+        {/* Left Floating Sound & Tuk-Tuk Silhouette Sticker */}
         <motion.div
           style={{ rotate: fgRotate }}
           className="hidden md:flex flex-col items-center justify-center bg-[#ff1616] text-white font-['Bangers'] text-2xl px-4 py-2 border-3 border-white shadow-[4px_4px_0_#1a1a1a] rounded-xl -translate-x-6"
         >
           <span>{theme.soundLeft}</span>
-          <span className="text-4xl mt-1">{theme.thaiIcon1}</span>
+          <div className="flex items-center gap-1 mt-1 text-3xl">
+            <span>{theme.thaiIcon1}</span>
+            <span>🛺</span>
+          </div>
         </motion.div>
 
-        {/* Right Floating Sound Sticker */}
+        {/* Right Floating Sound & Win Moto Silhouette Sticker */}
         <motion.div
           style={{ rotate: fgOpposite }}
           className="hidden md:flex flex-col items-center justify-center bg-[#ffde59] text-[#1a1a1a] font-['Bangers'] text-2xl px-4 py-2 border-3 border-white shadow-[4px_4px_0_#1a1a1a] rounded-xl translate-x-6"
         >
           <span>{theme.soundRight}</span>
-          <span className="text-4xl mt-1">{theme.thaiIcon2}</span>
+          <div className="flex items-center gap-1 mt-1 text-3xl">
+            <span>{theme.thaiIcon2}</span>
+            <span>🛵</span>
+          </div>
         </motion.div>
       </motion.div>
     </section>
@@ -291,6 +331,8 @@ export default function StoryScrollContainer({
   // Track which section index is currently unlocked (`0` initially)
   const [unlockedIndex, setUnlockedIndex] = useState(0);
   const [selectionsMap, setSelectionsMap] = useState({});
+  const [isWiping, setIsWiping]           = useState(false);
+  const [wipeText, setWipeText]           = useState('');
   const sectionRefs                       = useRef({});
 
   // Sort stages/questions strictly by step_order ASC
@@ -318,51 +360,61 @@ export default function StoryScrollContainer({
     }
   }, [userSelections, sortedStages.length]);
 
-  // Handle option selection in stage index
+  // Handle option selection in stage index with Comic Screen Wipe!
   const handleSectionSelect = (index, optionId) => {
-    const updatedMap = { ...selectionsMap, [index]: optionId };
-    setSelectionsMap(updatedMap);
-
-    // Build ordered selections array up to current filled questions
-    const updatedArray = Object.keys(updatedMap)
-      .sort((a, b) => Number(a) - Number(b))
-      .map((k) => updatedMap[k]);
-
-    // Inform parent of choice
-    if (onSelectOption) {
-      onSelectOption(index, optionId);
-    }
-
     const isLastQuestion = index === sortedStages.length - 1;
+    setWipeText(
+      isLastQuestion
+        ? '⚡ ALCHEMY IN PROGRESS... REVEALING SPIRIT DRINK! ⚡'
+        : '💥 POW! STAGE CLEAR! UNLOCKING NEXT CHAPTER... 💥'
+    );
+    setIsWiping(true);
 
-    if (!isLastQuestion) {
-      // Unlock next stage (1 Story Section = 1 Game Action)
-      const nextIndex = Math.max(unlockedIndex, index + 1);
-      setUnlockedIndex(nextIndex);
+    // Trigger state transitions & scrolling mid-wipe
+    setTimeout(() => {
+      const updatedMap = { ...selectionsMap, [index]: optionId };
+      setSelectionsMap(updatedMap);
 
-      // Smoothly auto-scroll down to the next unlocked stage after selection
-      setTimeout(() => {
-        const nextNode = sectionRefs.current[index + 1];
-        if (nextNode) {
-          nextNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 550);
-    } else {
-      // Final question answered → Auto-scroll to bottom and complete
-      setTimeout(() => {
-        window.scrollTo({
-          top: document.body.scrollHeight,
-          behavior: 'smooth',
-        });
+      // Build ordered selections array up to current filled questions
+      const updatedArray = Object.keys(updatedMap)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((k) => updatedMap[k]);
 
-        // Trigger onCompleteAll with full selections array
+      // Inform parent of choice
+      if (onSelectOption) {
+        onSelectOption(index, optionId);
+      }
+
+      if (!isLastQuestion) {
+        // Unlock next stage (1 Story Section = 1 Game Action)
+        const nextIndex = Math.max(unlockedIndex, index + 1);
+        setUnlockedIndex(nextIndex);
+
         setTimeout(() => {
-          if (onCompleteAll) {
-            onCompleteAll(updatedArray);
+          setIsWiping(false);
+          const nextNode = sectionRefs.current[index + 1];
+          if (nextNode) {
+            nextNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
-        }, 850);
-      }, 500);
-    }
+        }, 450);
+      } else {
+        // Final question answered → Auto-scroll to bottom and complete
+        setTimeout(() => {
+          setIsWiping(false);
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth',
+          });
+
+          // Trigger onCompleteAll with full selections array
+          setTimeout(() => {
+            if (onCompleteAll) {
+              onCompleteAll(updatedArray);
+            }
+          }, 600);
+        }, 450);
+      }
+    }, 400);
   };
 
   const allCompleted =
@@ -381,6 +433,8 @@ export default function StoryScrollContainer({
         transformStyle: 'preserve-3d',
       }}
     >
+      <ScreenWipeOverlay isWiping={isWiping} text={wipeText} />
+
       {/* Top Banner Guide */}
       <div className="sticky top-4 z-50 bg-[#1a1a1a] border-3 border-white px-5 py-2 shadow-[4px_4px_0_#ffde59] rounded-full flex items-center gap-3">
         <span className="text-xl">📜</span>
@@ -389,25 +443,35 @@ export default function StoryScrollContainer({
         </span>
       </div>
 
-      {/* Render stages vertically with 100vh full-viewport layout */}
+      {/* Render stages vertically with 100vh full-viewport layout using AnimatePresence */}
       <div className="w-full flex flex-col items-center">
-        {renderedStages.map((stage, index) => {
-          const isUnlocked  = index <= unlockedIndex;
-          const isCompleted = selectionsMap[index] !== undefined;
+        <AnimatePresence mode="wait">
+          {renderedStages.map((stage, index) => {
+            const isUnlocked  = index <= unlockedIndex;
+            const isCompleted = selectionsMap[index] !== undefined;
 
-          return (
-            <ScrollySection
-              key={stage.id ?? index}
-              question={stage}
-              index={index}
-              total={sortedStages.length}
-              isUnlocked={isUnlocked}
-              isCompleted={isCompleted}
-              onSelectOption={handleSectionSelect}
-              registerRef={registerRef}
-            />
-          );
-        })}
+            return (
+              <motion.div
+                key={stage.id ?? index}
+                initial={{ opacity: 0, scale: 0.94, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: -30 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 25 }}
+                className="w-full flex flex-col items-center"
+              >
+                <ScrollySection
+                  question={stage}
+                  index={index}
+                  total={sortedStages.length}
+                  isUnlocked={isUnlocked}
+                  isCompleted={isCompleted}
+                  onSelectOption={handleSectionSelect}
+                  registerRef={registerRef}
+                />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
       {/* Bottom Completion Splash before transitioning to result */}
