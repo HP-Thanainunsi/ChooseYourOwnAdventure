@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "init-db": "node src/database/init.js"
+    "init-db": "node src/database/init.js",
+    "vercel-build": "cd client && npm install && npm run build"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
