@@ -1,16 +1,15 @@
 /**
- * FinalDestination.jsx
+ * FinalDestination.jsx — 5-Star Hotel Bar Sanctuary Invitation (Garden of Siam)
  * ─────────────────────────────────────────────────────────────────────────────
- * Cinematic Full-Screen Finale Component for the gamified drink app.
+ * Cinematic Full-Screen Finale Component for the Gamified Drink App.
  *
- * Design Layout (Mobile-First, Full Screen):
- *   1. Background Layer (The Drink): Full-screen cover with slow continuous
- *      scale-up breathing animation and bottom dark gradient overlay.
- *   2. Story Layer (Comic Caption Box): Pop-art narration box with thick black
- *      borders, Chonburi heading, and Mitr body typography.
- *   3. Map & Action Layer (The Destination Ticket): Cyberpunk ticket pinned to
- *      the bottom displaying the Bar Name, retro GPS Coordinates, and a massive
- *      glowing "NAVIGATE TO LOCATION" Google Maps button.
+ * Design Layout (Glassmorphism, Gold, Silk & Elegant Typography):
+ *   1. Background Layer: Full-screen cocktail aesthetic with slow breathing scale
+ *      and deep emerald/midnight gold silk overlay.
+ *   2. Royal Invitation Panel: Frosted glass (`backdrop-blur-2xl border border-[#d4af37]`)
+ *      with gold foil typography (`Cinzel` & `Prompt`) and silk shimmer.
+ *   3. The Brass Key Concierge Pass (Pinned at bottom): Pinned luxury pass with
+ *      Coordinates, Bar Name, and an elegant 'CONCIERGE NAVIGATION' button (`target="_blank"`).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -20,17 +19,17 @@ import { motion } from 'framer-motion';
 export default function FinalDestination({
   drinkImage = '/images/drinks/tropical-smoothie.png',
   drinkName = 'THE BANGKOK ALCHEMIST',
-  storyText = 'ค่ำคืนอันยาวนานสิ้นสุดลงที่นี่... สปิริตของคุณตรงกับความเย้ายวน ลึกลับ และเต็มไปด้วยชีวิตชีวาของมหานครที่ไม่เคยหลับใหล ดื่มด่ำไปกับรสสัมผัสที่ถูกลิขิตไว้เพื่อคุณโดยเฉพาะ ณ บาร์ลับแห่งนี้',
-  barName = 'HIDDEN SPEAKEASY',
+  storyText = 'ค่ำคืนอันยาวนานสิ้นสุดลงที่นี่... สปิริตของคุณตรงกับความเย้ายวน ลึกลับ และเต็มไปด้วยชีวิตชีวาของมหานครที่ไม่เคยหลับใหล ดื่มด่ำไปกับรสสัมผัสที่ถูกลิขิตไว้เพื่อคุณโดยเฉพาะ ณ บาร์ลับระดับ 5 ดาวแห่งนี้',
+  barName = 'THE GARDEN OF SIAM · SPEAKEASY',
   googleMapsUrl = 'https://maps.app.goo.gl/TeensOfThailandBangkok',
   onRestart = null,
 }) {
-  // Generate or parse retro GPS coordinates based on bar name
+  // Generate or parse retro coordinates
   const getCoordinates = (name = '') => {
-    if (name.toLowerCase().includes('teens')) return 'LAT: 13.7388° N | LON: 100.5144° E';
-    if (name.toLowerCase().includes('tropic')) return 'LAT: 13.7287° N | LON: 100.5165° E';
-    if (name.toLowerCase().includes('nana')) return 'LAT: 13.7405° N | LON: 100.5532° E';
-    return 'LAT: 13.7394° N | LON: 100.5538° E';
+    if (name.toLowerCase().includes('teens')) return 'LAT 13.7388° N · LON 100.5144° E';
+    if (name.toLowerCase().includes('tropic')) return 'LAT 13.7287° N · LON 100.5165° E';
+    if (name.toLowerCase().includes('nana')) return 'LAT 13.7405° N · LON 100.5532° E';
+    return 'LAT 13.7394° N · LON 100.5538° E';
   };
 
   const coordinates = getCoordinates(barName);
@@ -40,134 +39,129 @@ export default function FinalDestination({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2, ease: 'easeOut' }}
-      className="relative w-full min-h-screen h-screen overflow-hidden bg-[#0d0714] flex flex-col justify-between select-none"
+      className="relative w-full min-h-screen h-screen overflow-hidden bg-[#041410] flex flex-col justify-between select-none font-['Prompt']"
     >
-      {/* ─── 1. BACKGROUND LAYER (THE DRINK WITH BREATHING EFFECT) ─────────── */}
+      {/* ─── 1. BACKGROUND LAYER (LUXURY COCKTAIL ATMOSPHERE) ──────────────── */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.img
           src={drinkImage || '/images/drinks/tropical-smoothie.png'}
           alt={drinkName}
-          className="w-full h-full object-cover origin-center"
-          animate={{ scale: [1, 1.08, 1] }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-full h-full object-cover origin-center opacity-85"
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
         />
-        {/* Dark Gradient Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0714] via-[#0d0714]/75 to-transparent/30 pointer-events-none" />
+        {/* Silk & Gold Dust Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#041410] via-[#041410]/85 to-[#041410]/40 pointer-events-none" />
         
-        {/* Subtle Cyber Grid & Halftone Dots Texture */}
+        {/* Golden Silk Shimmer Texture */}
         <div
-          className="absolute inset-0 opacity-20 pointer-events-none"
+          className="absolute inset-0 opacity-15 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(circle, #ffde59 1.5px, transparent 1.5px)',
-            backgroundSize: '16px 16px',
+            backgroundImage: 'radial-gradient(circle, rgba(212,175,55,0.4) 1.5px, transparent 1.5px)',
+            backgroundSize: '24px 24px',
           }}
         />
       </div>
 
-      {/* Top Bar Header & Restart Option */}
+      {/* Top Header Bar & Re-experience Action */}
       <div className="relative z-20 w-full px-5 pt-6 flex items-center justify-between pointer-events-auto">
-        <div className="bg-[#1a1a1a] border-2 border-[#ffde59] px-3.5 py-1.5 rounded-full shadow-[3px_3px_0_#ff007f] flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#00f0ff] animate-ping" />
-          <span className="font-['Bangers'] text-white tracking-widest text-xs md:text-sm">
-            ⚡ DESTINATION UNLOCKED ⚡
+        <div className="bg-[#043927]/90 border border-[#d4af37]/60 px-4 py-1.5 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl flex items-center gap-2.5">
+          <span className="w-2 h-2 rounded-full bg-[#fef08a] animate-ping" />
+          <span className="font-['Cinzel'] text-[#d4af37] tracking-[0.2em] text-xs font-bold uppercase">
+            ✦ SANCTUARY DESTINATION UNLOCKED ✦
           </span>
         </div>
 
         {onRestart && (
           <motion.button
-            whileHover={{ scale: 1.08, y: -2 }}
-            whileTap={{ scale: 0.94 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onRestart}
-            className="bg-[#ff1616] border-2 border-white text-white font-['Bangers'] text-xs tracking-wider px-4 py-1.5 rounded-full shadow-[3px_3px_0_#1a1a1a] uppercase"
+            className="bg-[#1c130d]/90 border border-[#d4af37]/80 text-[#fef08a] font-['Cinzel'] text-xs tracking-[0.15em] px-4 py-1.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.7)] backdrop-blur-xl hover:bg-[#043927] transition-all uppercase font-semibold"
           >
-            🔄 PLAY AGAIN
+            ✦ RE-EXPERIENCE
           </motion.button>
         )}
       </div>
 
-      {/* ─── 2. STORY LAYER (COMIC CAPTION BOX) ───────────────────────────── */}
+      {/* ─── 2. ROYAL INVITATION PANEL (GLASSMORPHISM) ─────────────────────── */}
       <div className="relative z-20 w-full max-w-xl mx-auto px-4 my-auto flex flex-col justify-center pb-32 md:pb-36 pointer-events-auto">
         <motion.div
           initial={{ opacity: 0, y: 35, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.3, type: 'spring', damping: 22 }}
-          className="bg-[#ffde59]/95 border-4 border-[#1a1a1a] p-6 md:p-8 rounded-3xl shadow-[8px_8px_0_#1a1a1a,0_0_30px_rgba(255,222,89,0.3)] relative"
+          className="bg-[#043927]/85 border-2 border-[#d4af37] p-6 md:p-8 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.2)] backdrop-blur-2xl relative"
         >
-          {/* Top Issue Tag */}
-          <div className="absolute -top-4 left-6 bg-[#ff007f] text-white font-['Bangers'] text-xs md:text-sm tracking-widest px-4 py-1 border-2 border-[#1a1a1a] shadow-[2px_2px_0_#1a1a1a] -rotate-2 uppercase">
-            🍸 FINAL ISSUE • YOUR DESTINED SPIRIT
+          {/* Top Royal Badge */}
+          <div className="absolute -top-4 left-6 bg-[#1c130d] text-[#fef08a] font-['Cinzel'] text-xs tracking-[0.25em] px-5 py-1.5 rounded-full border border-[#d4af37] shadow-[0_5px_15px_rgba(0,0,0,0.8)] font-bold uppercase">
+            ✦ MEMBERS ONLY · ROYAL INVITATION ✦
           </div>
 
-          {/* Heading — 'Chonburi' Font */}
-          <h1
-            className="font-['Chonburi'] text-2xl sm:text-3xl md:text-4xl text-[#1a1a1a] leading-tight mb-3 mt-2"
-            style={{
-              textShadow: '1.5px 1.5px 0 rgba(255,255,255,0.8)',
-            }}
-          >
+          {/* Drink Name Heading — Elegant Serif */}
+          <h1 className="font-['Cinzel'] text-2xl sm:text-3xl md:text-4xl text-[#fef08a] tracking-wider mb-3 mt-3 font-bold uppercase drop-shadow-md">
             {drinkName}
           </h1>
 
-          {/* Decorative Divider */}
-          <div className="w-16 h-1.5 bg-[#1a1a1a] rounded-full mb-4" />
+          {/* Gold Silk Divider */}
+          <div className="w-20 h-0.5 bg-gradient-to-r from-[#d4af37] to-transparent rounded-full mb-4" />
 
-          {/* Body — 'Mitr' Font */}
-          <p className="font-['Mitr'] font-normal text-sm sm:text-base md:text-lg text-[#1a1a1a]/90 leading-relaxed m-0">
+          {/* Body Text — Clean Thai Prompt */}
+          <p className="font-['Prompt'] font-light text-sm sm:text-base md:text-lg text-[#f8fafc]/90 leading-relaxed m-0">
             {storyText}
           </p>
 
-          {/* Bottom Right Comic Stamp */}
-          <div className="absolute -bottom-3 -right-3 bg-white border-2 border-[#1a1a1a] px-3 py-1 rounded-lg shadow-[2px_2px_0_#1a1a1a] font-['Bangers'] text-xs text-[#1a1a1a] rotate-3">
-            ★ BANGKOK NIGHTLIFE ★
+          {/* Bottom Stamp */}
+          <div className="absolute -bottom-3.5 right-6 bg-[#0b132b] border border-[#d4af37] px-4 py-1 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.8)] font-['Cinzel'] text-xs text-[#d4af37] tracking-[0.2em] font-semibold uppercase">
+            ✦ 5-STAR LUXURY BAR ✦
           </div>
         </motion.div>
       </div>
 
-      {/* ─── 3. MAP & ACTION LAYER (THE DESTINATION TICKET) ───────────────── */}
+      {/* ─── 3. THE CONCIERGE BRASS KEY PASS (PINNED AT BOTTOM) ─────────────── */}
       <motion.div
         initial={{ y: 160, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.6, type: 'spring', stiffness: 300, damping: 28 }}
-        className="absolute bottom-0 left-0 right-0 z-30 bg-[#1a1a1a] border-t-4 border-[#00f0ff] rounded-t-3xl shadow-[0_-12px_40px_rgba(0,240,255,0.25)] p-5 md:p-7 pointer-events-auto"
+        className="absolute bottom-0 left-0 right-0 z-30 bg-[#041410]/95 border-t-2 border-[#d4af37] rounded-t-3xl shadow-[0_-15px_50px_rgba(0,0,0,0.95),0_0_30px_rgba(212,175,55,0.15)] backdrop-blur-2xl p-5 md:p-7 pointer-events-auto"
       >
-        <div className="max-w-xl mx-auto flex flex-col gap-4">
+        <div className="max-w-xl mx-auto flex flex-col gap-4.5">
           
-          {/* Ticket Header & GPS Coordinates */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-white/15 pb-3.5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#ff007f] border-2 border-white flex items-center justify-center text-xl shadow-[3px_3px_0_#00f0ff] -rotate-3">
-                📍
+          {/* Ticket Header & Coordinates */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d4af37]/30 pb-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-[#043927] border border-[#d4af37] flex items-center justify-center text-xl shadow-md">
+                🗝️
               </div>
               <div>
-                <span className="font-['Outfit'] text-[10px] uppercase font-bold text-white/50 tracking-widest block">
-                  SECRET BAR LOCATION
+                <span className="font-['Cinzel'] text-[10px] uppercase font-bold text-[#d4af37] tracking-[0.2em] block">
+                  SECRET CONCIERGE DESTINATION
                 </span>
-                <h2 className="font-['Chonburi'] text-lg sm:text-xl text-white tracking-wide m-0">
+                <h2 className="font-['Cinzel'] text-lg sm:text-xl text-[#fef08a] font-bold tracking-wide m-0">
                   {barName}
                 </h2>
               </div>
             </div>
 
-            {/* Retro GPS Coordinates Tag */}
-            <div className="bg-black/60 border border-[#00f0ff]/60 px-3 py-1 rounded-lg text-right sm:text-left self-start sm:self-auto">
-              <span className="font-['Orbitron'] font-bold text-[11px] text-[#00f0ff] tracking-widest block">
+            {/* Gold Coordinates Tag */}
+            <div className="bg-[#1c130d]/90 border border-[#d4af37]/60 px-3.5 py-1.5 rounded-xl text-right sm:text-left self-start sm:self-auto shadow-inner">
+              <span className="font-['Cinzel'] font-semibold text-[11px] text-[#fef08a] tracking-widest block">
                 {coordinates}
               </span>
             </div>
           </div>
 
-          {/* Massive Glowing "NAVIGATE TO LOCATION" Button */}
+          {/* Concierge Navigation Button */}
           <motion.a
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            className="w-full bg-gradient-to-r from-[#00f0ff] via-[#38b6ff] to-[#ff007f] border-3 border-white text-[#1a1a1a] font-['Bangers'] text-xl sm:text-2xl tracking-widest py-4 px-6 rounded-2xl shadow-[0_0_25px_rgba(0,240,255,0.6),5px_5px_0_#1a1a1a] flex items-center justify-center gap-3 text-center uppercase cursor-pointer transition-all hover:shadow-[0_0_35px_rgba(255,0,127,0.8),5px_5px_0_#1a1a1a]"
+            whileTap={{ scale: 0.98 }}
+            className="w-full bg-gradient-to-r from-[#047857] via-[#043927] to-[#d4af37] border border-[#fef08a] text-white font-['Cinzel'] text-base sm:text-lg tracking-[0.2em] font-bold py-4 px-6 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(212,175,55,0.3)] flex items-center justify-center gap-3 text-center uppercase cursor-pointer transition-all hover:brightness-110"
           >
-            <span className="text-2xl animate-bounce">🗺️</span>
-            <span>NAVIGATE TO LOCATION</span>
-            <span className="text-xl">🚀</span>
+            <span className="text-xl">🛎️</span>
+            <span>REQUEST CONCIERGE NAVIGATION</span>
+            <span className="text-xl">✨</span>
           </motion.a>
         </div>
       </motion.div>

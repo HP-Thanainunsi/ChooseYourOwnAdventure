@@ -38,6 +38,9 @@ app.use(express.json({ limit: '100kb' }));
 // Serve static assets (drink images, option images, etc.)
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
+// Serve built React frontend from client/dist
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 // ─── Database auto-initialisation (essential for Serverless environments like Vercel) ───
 app.use(async (_req, res, next) => {
   try {
@@ -60,7 +63,15 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── 404 handler ─────────────────────────────────────────────────────────────
+// ─── Single-Page Application (SPA) Fallback ───────────────────────────────────
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/images')) return next();
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'), (err) => {
+    if (err) next();
+  });
+});
+
+// ─── 404 handler for unknown API routes ───────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ success: false, error: 'Route not found.' });
 });

@@ -1,117 +1,131 @@
 /**
  * LoadingScreen.jsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Thai Street-Pop & Mystical Loading Screen with Rotating Neon Lotus / Lai Thai pattern.
- * Eliminates generic spinners in favor of rich, glowing Bangkok night aesthetics.
+ * Garden of Siam — 5-Star Luxury Hotel Bar Loading & Transition Screen
+ * Features glassmorphism panels, golden lotus animation, and cinematic lighting.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export default function LoadingScreen({ message = 'กำลังโหลดข้อมูลเมืองสยาม...', mystical = false, progressPercent = null }) {
+export default function LoadingScreen({ message = 'ต้อนรับสู่ Garden of Siam...', mystical = false, progressPercent = null }) {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen gap-10 px-6 bg-[#0f0a18] overflow-hidden select-none">
+    <div className="relative flex flex-col items-center justify-center min-h-screen gap-10 px-6 bg-[#041410] overflow-hidden select-none">
       
-      {/* Background Halftone & Neon Glow */}
-      <div
-        className="absolute inset-0 opacity-20 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #ff007f 1.5px, transparent 1.5px)',
-          backgroundSize: '16px 16px',
-        }}
-      />
-      <div className="absolute w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-[#ff007f]/20 via-[#00f0ff]/15 to-transparent blur-3xl pointer-events-none animate-pulse" />
+      {/* Background Cinematic Glow & Golden Particles */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#0a4f37_0%,transparent_70%)] opacity-60 pointer-events-none" />
+      <div className="absolute w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-[#d4af37]/15 via-[#043927]/30 to-transparent blur-3xl pointer-events-none animate-pulse" />
 
-      {/* ── Visual Indicator: Spinning Lai Thai / Rotating Neon Lotus ────── */}
-      <div className="relative flex items-center justify-center w-48 h-48 z-10">
+      {/* Floating Gold Dust Particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <motion.div
+            key={`particle-${i}`}
+            animate={{
+              y: [0, -40, 0],
+              opacity: [0.2, 0.8, 0.2],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 4 + (i % 4),
+              repeat: Infinity,
+              delay: i * 0.4,
+              ease: 'easeInOut',
+            }}
+            className="absolute w-1.5 h-1.5 rounded-full bg-[#d4af37] shadow-[0_0_8px_#d4af37]"
+            style={{
+              top: `${15 + (i * 7)}%`,
+              left: `${10 + (i * 7)}%`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── Visual Indicator: Golden Lotus & Glass Ring ────── */}
+      <div className="relative flex items-center justify-center w-52 h-52 z-10">
         
-        {/* Outer Golden/Cyan Lai Thai Pattern Wheel */}
+        {/* Outer Thin Gold Glass Ring */}
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-          className="absolute inset-0 rounded-full border-[3px] border-dashed border-[#ffde59]/60 shadow-[0_0_25px_rgba(255,222,89,0.3)] flex items-center justify-center"
+          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0 rounded-full border border-[#d4af37]/40 shadow-[0_0_35px_rgba(212,175,55,0.2)] bg-[#043927]/20 backdrop-blur-md flex items-center justify-center"
         >
-          {/* 8 Ornamental Lai Thai / Street-Pop cardinal dots */}
-          {Array.from({ length: 8 }, (_, i) => i * 45).map((deg) => (
+          {/* 4 Elegant Gold Accents */}
+          {[0, 90, 180, 270].map((deg) => (
             <div
-              key={`cardinal-${deg}`}
-              className="absolute w-3 h-3 rounded-full bg-[#00f0ff] shadow-[0_0_10px_#00f0ff]"
+              key={deg}
+              className="absolute w-2 h-2 rounded-full bg-[#d4af37] shadow-[0_0_10px_#d4af37]"
               style={{
-                transform: `rotate(${deg}deg) translateY(-88px)`,
+                transform: `rotate(${deg}deg) translateY(-102px)`,
               }}
             />
           ))}
         </motion.div>
 
-        {/* Middle Counter-Spinning Neon Magenta Ring */}
+        {/* Middle Counter-Spinning Emerald/Gold Ring */}
         <motion.div
-          animate={{ rotate: -360, scale: [0.95, 1.05, 0.95] }}
+          animate={{ rotate: -360, scale: [0.96, 1.04, 0.96] }}
           transition={{
-            rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
-            scale:  { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+            rotate: { duration: 18, repeat: Infinity, ease: 'linear' },
+            scale:  { duration: 4, repeat: Infinity, ease: 'easeInOut' }
           }}
-          className="absolute w-36 h-36 rounded-full border-4 border-t-[#ff007f] border-r-[#ffde59] border-b-[#00f0ff] border-l-transparent shadow-[0_0_30px_rgba(255,0,127,0.6)]"
+          className="absolute w-38 h-38 rounded-full border border-[#d4af37]/60 shadow-[0_0_20px_rgba(212,175,55,0.25)]"
+          style={{ width: '152px', height: '152px' }}
         />
 
-        {/* Inner Pulsing Thai Sacred Ring */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-          className="absolute w-24 h-24 rounded-full border-2 border-[#ffde59] opacity-80"
-        />
-
-        {/* Center Rotating & Floating Neon Lotus */}
+        {/* Center Glowing Golden Lotus / Sparkles */}
         <motion.div
           animate={{
-            rotate: mystical ? [0, 15, -15, 0] : [0, 360],
-            scale:  [1, 1.15, 1],
-            y:      [-4, 4, -4]
+            scale: [1, 1.12, 1],
+            y: [-3, 3, -3]
           }}
           transition={{
-            rotate: { duration: mystical ? 4 : 10, repeat: Infinity, ease: 'easeInOut' },
-            scale:  { duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
-            y:      { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+            scale: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' },
+            y: { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }
           }}
-          className="relative z-20 flex items-center justify-center text-6xl md:text-7xl filter drop-shadow-[0_0_25px_rgba(255,0,127,0.9)] cursor-pointer"
+          className="relative z-20 flex flex-col items-center justify-center text-6xl md:text-7xl filter drop-shadow-[0_0_30px_rgba(212,175,55,0.7)]"
         >
-          {mystical ? '🔮' : '🪷'}
+          <span>{mystical ? '✨' : '🪷'}</span>
         </motion.div>
       </div>
 
-      {/* ── Message & Preload Bar ────────────────────────────────────────── */}
+      {/* ── Message & Progress Bar in Glass Panel ────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4 max-w-md w-full z-10 px-4"
+        transition={{ duration: 0.8 }}
+        className="text-center space-y-5 max-w-md w-full z-10 px-6 py-8 rounded-3xl bg-[#043927]/40 border border-[#d4af37]/40 shadow-[0_20px_60px_rgba(0,0,0,0.7)] backdrop-blur-xl"
       >
-        <div className="inline-block bg-[#1a1a1a] text-[#ffde59] font-['Bangers'] text-xs md:text-sm tracking-widest px-4 py-1 border-2 border-[#ffde59] shadow-[3px_3px_0_#ff007f] -rotate-1">
-          {mystical ? '✨ SPIRIT ALCHEMY IN PROGRESS ✨' : '⚡ BANGKOK STREET-POP ENGINE ⚡'}
+        <div className="inline-block bg-[#0b132b]/80 border border-[#d4af37]/60 rounded-full px-5 py-1.5 shadow-[0_4px_15px_rgba(212,175,55,0.15)]">
+          <span className="font-['Cinzel'] text-[#d4af37] text-xs md:text-sm tracking-[0.25em] uppercase font-medium">
+            {mystical ? '✨ THE HIDDEN SANCTUARY ✨' : '🌿 GARDEN OF SIAM • 5-STAR BAR 🌿'}
+          </span>
         </div>
 
         <p
-          className="text-white font-['Chonburi'] text-xl md:text-2xl tracking-wide leading-relaxed"
-          style={{ textShadow: '2px 2px 0 #1a1a1a, 0 0 15px rgba(0,240,255,0.6)' }}
+          className="text-[#f8fafc] font-['Playfair_Display'] text-xl md:text-2xl tracking-wide leading-relaxed font-light"
+          style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
         >
           {message}
         </p>
 
         {progressPercent !== null && (
-          <div className="w-full bg-[#1a1a1a]/80 p-1.5 rounded-full border-3 border-white/60 shadow-[6px_6px_0_#ff007f] backdrop-blur-md">
+          <div className="w-full bg-[#0b132b]/80 p-1 rounded-full border border-[#d4af37]/40 shadow-inner">
             <div
-              className="h-3.5 rounded-full bg-gradient-to-r from-[#ff007f] via-[#ffde59] to-[#00f0ff] transition-all duration-300 ease-out shadow-[0_0_15px_#ffde59]"
+              className="h-2.5 rounded-full bg-gradient-to-r from-[#047857] via-[#d4af37] to-[#f59e0b] transition-all duration-500 ease-out shadow-[0_0_15px_#d4af37]"
               style={{ width: `${Math.max(6, Math.min(100, progressPercent))}%` }}
             />
           </div>
         )}
 
-        {/* Thai Pop Dots */}
-        <div className="flex gap-2.5 justify-center pt-2">
-          {['#ff007f', '#ffde59', '#00f0ff'].map((color, idx) => (
+        {/* Elegant Gold Dots */}
+        <div className="flex gap-3 justify-center pt-2">
+          {['#047857', '#d4af37', '#f59e0b'].map((color, idx) => (
             <motion.div
               key={color}
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: idx * 0.2 }}
-              className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]"
+              animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.6, repeat: Infinity, delay: idx * 0.3, ease: 'easeInOut' }}
+              className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]"
               style={{ background: color, color }}
             />
           ))}

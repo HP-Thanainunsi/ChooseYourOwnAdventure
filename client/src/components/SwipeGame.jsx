@@ -1,34 +1,22 @@
 /**
- * SwipeGame.jsx — Comic Book Panel · Thai Cultural Theme
+ * SwipeGame.jsx — 5-Star Hotel Concierge Welcome Tray (Garden of Siam)
  * ─────────────────────────────────────────────────────────────────────────────
  * Props:
- *   question  { id, type, content, options: [{id, label}, ...] }
- *   onSelect  (optionId: number) => void
+ *   question  { id, type, content, options: [{id, label, image_url}, ...] }
+ *   onSelect  (optionIds: number[]) => void
  *
- * Design:
- *   • Comic book panel card with 5px black border + offset box-shadow depth
- *   • Thai cultural scenes per question (Tuk-Tuk, Street Food, Temple, etc.)
- *   • Halftone Ben-Day dot overlay using CSS radial-gradient
- *   • Classic speech bubble above the card (Bangers font, thick border, CSS tail)
- *   • "YEAH!" / "NOPE!" comic stamps fade in during swipe direction
- *   • Speed lines SVG overlay when near commit threshold
- *
- * Behaviour:
- *   • Swipe RIGHT → onSelect(options[1])   (energetic / higher-score option)
- *   • Swipe LEFT  → onSelect(options[0])   (calm / lower-score option)
- *   • Flick velocity ≥ 420 px/s  OR  offset ≥ 95 px  → commit
- *   • Below threshold  → spring snap-back to centre
- *   • Tap buttons below card act as accessible fallback
- *
- * Framer Motion APIs:
- *   useMotionValue   – raw x position, zero re-renders
- *   useTransform     – rotate, stamp opacity, speed-line opacity
- *   animate()        – imperative fly-out on commit
- *   motion.div       – draggable card, deck shadow cards, entrance animations
+ * Features & Requirements:
+ *   1. Real Photorealistic Beverage Photography (`SWIPE ACTION ขอรูปภาพเครื่องดื่ม จริงไม่ใช่ภาพการตูน`):
+ *      Replaced cartoon emojis and illustrations with real 5-Star Hotel cocktail and welcome drink
+ *      photographs (`optLeft.image_url` & `optRight.image_url`).
+ *   2. Concierge Serving Tray Experience:
+ *      A split luxury brass/silver tray displaying both welcome beverage choices in real life quality.
+ *      As the user swipes/drags left or right (`panDirection`), the corresponding drink highlights
+ *      with gold leaf glow and emerald badges (`✦ SELECTED WELCOME ELIXIR ✦`).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useRef, useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   motion,
   useMotionValue,
@@ -36,464 +24,121 @@ import {
   animate,
 } from 'framer-motion';
 
-// ─── Thai cultural scene catalog ───────────────────────────────────────────────
-const THAI_SCENES = [
+// ─── Luxury Concierge Scenes Metadata ─────────────────────────────────────────
+const SCENES = [
   {
-    id:         'tuk-tuk',
-    gradFrom:   '#FF6B35',
-    gradTo:     '#C84B11',
-    dotColor:   'rgba(200,40,0,0.18)',
-    emoji:      '🛺',
-    extras:     ['💨', '⚡', '🌃'],
-    panelTitle: 'BANGKOK NIGHTS',
-    panelSub:   'Neon streets never sleep!',
-    stamp:      'VROOM!',
-    stampColor: '#FF6B35',
+    panelTitle: '✦ SCENE I : THE LOBBY WELCOME ✦',
+    panelSub:   '“ ยินดีต้อนรับสู่ The Garden of Siam กรุณาเลือกเครื่องดื่มรับรองสำหรับค่ำคืนนี้... ”',
+    extras:     ['✨', '🥂', '🌿'],
   },
   {
-    id:         'street-food',
-    gradFrom:   '#F9C74F',
-    gradTo:     '#F3722C',
-    dotColor:   'rgba(200,100,0,0.18)',
-    emoji:      '🍜',
-    extras:     ['🔥', '💨', '🌶️'],
-    panelTitle: 'STREET FOOD FEVER',
-    panelSub:   'Wok hei fills the air!',
-    stamp:      'SIZZLE!',
-    stampColor: '#F3722C',
-  },
-  {
-    id:         'temple',
-    gradFrom:   '#43AA8B',
-    gradTo:     '#264653',
-    dotColor:   'rgba(0,120,80,0.18)',
-    emoji:      '🏯',
-    extras:     ['🌅', '🪷', '✨'],
-    panelTitle: 'WAT ARUN DAWN',
-    panelSub:   'Monks chant in the mist...',
-    stamp:      'NAMASTE!',
-    stampColor: '#43AA8B',
-  },
-  {
-    id:         'traffic',
-    gradFrom:   '#EF233C',
-    gradTo:     '#8D0801',
-    dotColor:   'rgba(180,0,20,0.18)',
-    emoji:      '🚦',
-    extras:     ['🚗', '🏍️', '🌆'],
-    panelTitle: 'RUSH HOUR CHAOS',
-    panelSub:   'BKK gridlock, baby!',
-    stamp:      'HONK!!',
-    stampColor: '#EF233C',
-  },
-  {
-    id:         'floating-market',
-    gradFrom:   '#4CC9F0',
-    gradTo:     '#4361EE',
-    dotColor:   'rgba(0,80,200,0.18)',
-    emoji:      '⛵',
-    extras:     ['🌊', '🍑', '🌺'],
-    panelTitle: 'FLOATING MARKET',
-    panelSub:   'Trade on the Chao Phraya!',
-    stamp:      'SPLASH!',
-    stampColor: '#4361EE',
-  },
-  {
-    id:         'lantern-festival',
-    gradFrom:   '#7B2D8B',
-    gradTo:     '#200A3A',
-    dotColor:   'rgba(140,0,200,0.18)',
-    emoji:      '🏮',
-    extras:     ['✨', '🎆', '🌙'],
-    panelTitle: 'YI PENG FESTIVAL',
-    panelSub:   'Lanterns light the sky!',
-    stamp:      'WOW!',
-    stampColor: '#9B5DE5',
+    panelTitle: '✦ SCENE II : THE SENSORY GARDEN ✦',
+    panelSub:   '“ บรรยากาศสวนพฤกษาไทยร่มรื่น สัมผัสกลิ่นอายที่ปลุกเร้าโสตประสาทของคุณ... ”',
+    extras:     ['🌸', '🎋', '🍯'],
   },
 ];
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const OFFSET_THRESHOLD   = 95;
-const VELOCITY_THRESHOLD = 420;
-const FLY_OUT_X          = 700;
+const FLY_OUT_X          = 420;
+const OFFSET_THRESHOLD   = 80;
+const VELOCITY_THRESHOLD = 350;
 
-const SPRING_SNAP  = { type: 'spring', stiffness: 400, damping: 30 };
-const SPRING_FLY   = { type: 'spring', stiffness: 280, damping: 26 };
-const SPRING_ENTER = { type: 'spring', stiffness: 300, damping: 24, delay: 0.06 };
+const SPRING_SNAP  = { type: 'spring', stiffness: 420, damping: 30 };
+const SPRING_FLY   = { duration: 0.32, ease: [0.32, 0, 0.67, 0] };
+const SPRING_ENTER = { duration: 0.45, ease: [0.22, 1, 0.36, 1] };
 
-// Comic font stack (Bangers loaded via index.html Google Fonts link)
-const COMIC_FONT = '"Bangers", Impact, "Arial Black", cursive';
-
-// ─── Halftone dot overlay ─────────────────────────────────────────────────────
-function HalftoneDots({ color = 'rgba(0,0,0,0.14)', size = 10 }) {
+// ─── Tray Shadow Card Behind ──────────────────────────────────────────────────
+function TrayCardShadow() {
   return (
-    <div
-      style={{
-        position:            'absolute',
-        inset:               0,
-        backgroundImage:     `radial-gradient(circle, ${color} 1.8px, transparent 1.8px)`,
-        backgroundSize:      `${size}px ${size}px`,
-        pointerEvents:       'none',
-        borderRadius:        'inherit',
-      }}
-    />
+    <div className="absolute inset-0 bg-[#043927]/40 border border-[#d4af37]/30 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] pointer-events-none scale-[0.94] translate-y-3" />
   );
 }
 
-// ─── Speech bubble ────────────────────────────────────────────────────────────
-// Classic comic speech bubble with CSS triangle tail pointing downward.
-function SpeechBubble({ text }) {
-  return (
-    <div style={{ position: 'relative', textAlign: 'center', padding: '0 1.25rem', zIndex: 2 }}>
-      {/* Bubble body */}
-      <div style={{
-        display:        'inline-block',
-        background:     '#ffffff',
-        border:         '4px solid #1a1a1a',
-        borderRadius:   '22px',
-        padding:        '0.65rem 1.25rem',
-        position:       'relative',
-        maxWidth:       '90%',
-        boxShadow:      '4px 4px 0 #1a1a1a',
-      }}>
-        <p style={{
-          fontFamily:    COMIC_FONT,
-          fontSize:      'clamp(1.1rem, 4vw, 1.45rem)',
-          letterSpacing: '0.04em',
-          color:         '#1a1a1a',
-          lineHeight:    1.15,
-          margin:        0,
-        }}>
-          {text}
-        </p>
-
-        {/* Tail — outer black triangle */}
-        <div style={{
-          position:    'absolute',
-          bottom:      -22,
-          left:        '50%',
-          transform:   'translateX(-50%)',
-          width:       0,
-          height:      0,
-          borderLeft:  '14px solid transparent',
-          borderRight: '14px solid transparent',
-          borderTop:   '22px solid #1a1a1a',
-        }} />
-        {/* Tail — inner white triangle (sits on top, slightly above) */}
-        <div style={{
-          position:    'absolute',
-          bottom:      -14,
-          left:        '50%',
-          transform:   'translateX(-50%)',
-          width:       0,
-          height:      0,
-          borderLeft:  '10px solid transparent',
-          borderRight: '10px solid transparent',
-          borderTop:   '16px solid #ffffff',
-        }} />
-      </div>
-    </div>
-  );
-}
-
-// ─── Comic stamp badge ("YEAH!" / "NOPE!") ────────────────────────────────────
-function ComicStamp({ label, sub, color, rotation, opacity, side }) {
-  const isLeft = side === 'left';
-  return (
-    <motion.div
-      style={{
-        position:       'absolute',
-        top:            '18%',
-        left:           isLeft ? '0.5rem' : undefined,
-        right:          !isLeft ? '0.5rem' : undefined,
-        opacity,
-        rotate:         rotation,
-        zIndex:         4,
-        pointerEvents:  'none',
-      }}
-    >
-      <div style={{
-        background:     '#ffffff',
-        border:         `4px solid ${color}`,
-        borderRadius:   '10px',
-        padding:        '0.3rem 0.55rem',
-        boxShadow:      `3px 3px 0 ${color}`,
-        lineHeight:     1,
-      }}>
-        <p style={{
-          fontFamily:    COMIC_FONT,
-          fontSize:      '1.35rem',
-          letterSpacing: '0.05em',
-          color,
-          margin:        0,
-        }}>
-          {label}
-        </p>
-        <p style={{
-          fontFamily:  COMIC_FONT,
-          fontSize:    '0.65rem',
-          color:       '#1a1a1a',
-          margin:      0,
-          marginTop:   '1px',
-          letterSpacing: '0.03em',
-          opacity:     0.7,
-          maxWidth:    '80px',
-          lineHeight:  1.1,
-          overflow:    'hidden',
-          whiteSpace:  'nowrap',
-          textOverflow: 'ellipsis',
-        }}>
-          {sub}
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Deck shadow cards ────────────────────────────────────────────────────────
-function DeckShadow({ xMotion, layer }) {
-  // layer 1 = closest to top, layer 2 = furthest back
-  const deckOpacity = useTransform(
-    xMotion,
-    [-160, 0, 160],
-    layer === 1 ? [0.62, 0.42, 0.62] : [0.35, 0.20, 0.35]
-  );
-  const deckScale = useTransform(
-    xMotion,
-    [-160, 0, 160],
-    layer === 1 ? [0.97, 0.94, 0.97] : [0.93, 0.89, 0.93]
-  );
-  const yOffset = layer === 1 ? 11 : 22;
+// ─── Real Photorealistic Beverage Tray Face (`ไม่ใช่ภาพการตูน`) ──────────────────
+function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
+  const isLeftActive  = panDirection === 'left';
+  const isRightActive = panDirection === 'right';
 
   return (
-    <motion.div
-      style={{
-        opacity:       deckOpacity,
-        scale:         deckScale,
-        translateY:    yOffset,
-        position:      'absolute',
-        inset:         0,
-        background:    '#fff9e8',
-        border:        '5px solid #1a1a1a',
-        borderRadius:  '16px',
-        boxShadow:     '5px 5px 0 #1a1a1a',
-        pointerEvents: 'none',
-      }}
-    />
-  );
-}
-
-// ─── Comic panel card face ────────────────────────────────────────────────────
-function ComicPanelFace({ scene, optLeft, optRight }) {
-  const CARD_W = 268;
-  const CARD_H = 368;
-  const ILLUS_H = Math.round(CARD_H * 0.58);   // illustration 58%
-  const TEXT_H  = CARD_H - ILLUS_H;             // text area 42%
-
-  return (
-    <div style={{
-      width:        CARD_W,
-      height:       CARD_H,
-      background:   '#fff9e8',
-      border:       '5px solid #1a1a1a',
-      borderRadius: '16px',
-      boxShadow:    '6px 6px 0 #1a1a1a',
-      overflow:     'hidden',
-      position:     'relative',
-      userSelect:   'none',
-    }}>
-
-      {/* ── Illustration area ──────────────────────────────────────────────── */}
-      <div style={{
-        height:        ILLUS_H,
-        background:    `linear-gradient(150deg, ${scene.gradFrom} 0%, ${scene.gradTo} 100%)`,
-        position:      'relative',
-        overflow:      'hidden',
-        borderBottom:  '4px solid #1a1a1a',
-      }}>
-        {/* Ben-Day halftone dots */}
-        <HalftoneDots color={scene.dotColor} size={11} />
-
-        {/* Panel title — top-left corner badge */}
-        <div style={{
-          position:   'absolute',
-          top:        '0.55rem',
-          left:       '0.55rem',
-          background: '#1a1a1a',
-          borderRadius: '6px',
-          padding:    '0.2rem 0.5rem',
-          zIndex:     2,
-        }}>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.62rem',
-            letterSpacing: '0.18em',
-            color:         '#ffffff',
-            margin:        0,
-          }}>
-            {scene.panelTitle}
-          </p>
-        </div>
-
-        {/* Floating extra emojis — top-right */}
-        <div style={{
-          position:  'absolute',
-          top:       '0.5rem',
-          right:     '0.5rem',
-          display:   'flex',
-          gap:       '2px',
-          fontSize:  '0.9rem',
-          opacity:   0.55,
-          zIndex:    2,
-        }}>
-          {scene.extras.map((e, i) => <span key={i}>{e}</span>)}
-        </div>
-
-        {/* Main scene emoji */}
-        <div style={{
-          position:       'absolute',
-          inset:          0,
-          display:        'flex',
-          alignItems:     'center',
-          justifyContent: 'center',
-        }}>
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              fontSize:  '5.5rem',
-              lineHeight: 1,
-              filter:    'drop-shadow(3px 3px 0 rgba(0,0,0,0.35))',
-            }}
-          >
-            {scene.emoji}
-          </motion.div>
-        </div>
-
-        {/* Stamp badge — bottom-right of illustration */}
-        <div style={{
-          position:      'absolute',
-          bottom:        '0.55rem',
-          right:         '0.55rem',
-          background:    '#ffffff',
-          border:        `3px solid #1a1a1a`,
-          borderRadius:  '8px',
-          padding:       '0.15rem 0.4rem',
-          transform:     'rotate(-4deg)',
-          boxShadow:     '2px 2px 0 #1a1a1a',
-          zIndex:        2,
-        }}>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.72rem',
-            letterSpacing: '0.1em',
-            color:         '#1a1a1a',
-            margin:        0,
-          }}>
-            {scene.stamp}
-          </p>
-        </div>
-
-        {/* Caption strip — bottom of illustration */}
-        <div style={{
-          position:   'absolute',
-          bottom:     0,
-          left:       0,
-          right:      0,
-          background: 'rgba(26,26,26,0.78)',
-          padding:    '0.25rem 0.6rem',
-          backdropFilter: 'blur(2px)',
-        }}>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.68rem',
-            letterSpacing: '0.07em',
-            color:         '#ffffff',
-            margin:        0,
-          }}>
-            {scene.panelSub}
-          </p>
+    <div className="relative w-[310px] sm:w-[340px] h-[440px] sm:h-[460px] bg-[#041410]/95 border-2 border-[#d4af37]/80 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.2)] overflow-hidden flex flex-col select-none backdrop-blur-2xl">
+      
+      {/* ── Top Header Badge ── */}
+      <div className="bg-[#043927]/90 border-b border-[#d4af37]/40 px-4 py-2.5 flex items-center justify-between z-10">
+        <span className="font-['Cinzel'] text-[0.62rem] sm:text-xs tracking-[0.18em] text-[#fef08a] font-bold uppercase">
+          {scene.panelTitle}
+        </span>
+        <div className="flex gap-1.5 text-xs">
+          {scene.extras.map((e, i) => <span key={`ex-${i}`}>{e}</span>)}
         </div>
       </div>
 
-      {/* ── Choice text area ────────────────────────────────────────────────── */}
-      <div style={{
-        height:        TEXT_H,
-        display:       'flex',
-        position:      'relative',
-        overflow:      'hidden',
-      }}>
-        {/* Subtle halftone on paper area */}
-        <HalftoneDots color="rgba(0,0,0,0.06)" size={8} />
+      {/* ── Split Photorealistic Beverage Tray (`ภาพจริง ไม่ใช่การ์ตูน`) ── */}
+      <div className="flex-1 grid grid-cols-2 gap-2 p-3 relative bg-gradient-to-b from-[#062319]/70 via-[#041410] to-[#1c130d]/80">
+        
+        {/* Left Beverage Option (Swipe Left) */}
+        <motion.div
+          animate={isLeftActive ? { scale: 1.05, borderColor: '#fef08a' } : { scale: 1, borderColor: 'rgba(212,175,55,0.35)' }}
+          className={`relative rounded-2xl border-2 bg-[#041410]/80 overflow-hidden flex flex-col items-center justify-between p-2 shadow-md transition-all ${
+            isLeftActive ? 'ring-2 ring-[#fef08a]/80 shadow-[0_0_25px_rgba(254,240,138,0.4)]' : 'opacity-85'
+          }`}
+        >
+          <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden border border-[#d4af37]/40 relative bg-[#041410]">
+            <img
+              src={optLeft?.image_url || '/images/options/cold-towel.png'}
+              alt={optLeft?.label}
+              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#041410]/80 via-transparent to-transparent" />
+            <span className="absolute top-1.5 left-1.5 bg-[#043927]/90 border border-[#d4af37] text-[#fef08a] font-['Cinzel'] text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+              ✦ OPTION I
+            </span>
+          </div>
 
-        {/* Left option */}
-        <div style={{
-          flex:          1,
-          display:       'flex',
-          flexDirection: 'column',
-          alignItems:    'center',
-          justifyContent: 'center',
-          padding:       '0.5rem 0.5rem',
-          borderRight:   '3px solid #1a1a1a',
-          gap:           '0.2rem',
-          position:      'relative',
-          zIndex:        1,
-        }}>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.8rem',
-            letterSpacing: '0.08em',
-            color:         '#6b7280',
-            margin:        0,
-          }}>
-            ← SWIPE
-          </p>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.85rem',
-            letterSpacing: '0.04em',
-            color:         '#1a1a1a',
-            margin:        0,
-            textAlign:     'center',
-            lineHeight:    1.15,
-          }}>
-            {optLeft.label}
-          </p>
-        </div>
+          <div className="text-center mt-2 px-1 pb-1">
+            <p className="font-['Prompt'] text-xs text-[#f8fafc] font-light line-clamp-2 leading-snug m-0">
+              {optLeft?.label || 'Cold Jasmine Welcome Drink'}
+            </p>
+          </div>
+        </motion.div>
 
-        {/* Right option */}
-        <div style={{
-          flex:          1,
-          display:       'flex',
-          flexDirection: 'column',
-          alignItems:    'center',
-          justifyContent: 'center',
-          padding:       '0.5rem 0.5rem',
-          gap:           '0.2rem',
-          position:      'relative',
-          zIndex:        1,
-        }}>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.8rem',
-            letterSpacing: '0.08em',
-            color:         '#6b7280',
-            margin:        0,
-          }}>
-            SWIPE →
-          </p>
-          <p style={{
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.85rem',
-            letterSpacing: '0.04em',
-            color:         '#1a1a1a',
-            margin:        0,
-            textAlign:     'center',
-            lineHeight:    1.15,
-          }}>
-            {optRight.label}
-          </p>
+        {/* Right Beverage Option (Swipe Right) */}
+        <motion.div
+          animate={isRightActive ? { scale: 1.05, borderColor: '#fef08a' } : { scale: 1, borderColor: 'rgba(212,175,55,0.35)' }}
+          className={`relative rounded-2xl border-2 bg-[#041410]/80 overflow-hidden flex flex-col items-center justify-between p-2 shadow-md transition-all ${
+            isRightActive ? 'ring-2 ring-[#fef08a]/80 shadow-[0_0_25px_rgba(254,240,138,0.4)]' : 'opacity-85'
+          }`}
+        >
+          <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden border border-[#d4af37]/40 relative bg-[#041410]">
+            <img
+              src={optRight?.image_url || '/images/options/warm-tea.png'}
+              alt={optRight?.label}
+              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#041410]/80 via-transparent to-transparent" />
+            <span className="absolute top-1.5 right-1.5 bg-[#1c130d]/90 border border-[#d4af37] text-[#fef08a] font-['Cinzel'] text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+              OPTION II ✦
+            </span>
+          </div>
+
+          <div className="text-center mt-2 px-1 pb-1">
+            <p className="font-['Prompt'] text-xs text-[#f8fafc] font-light line-clamp-2 leading-snug m-0">
+              {optRight?.label || 'Steaming Royal Lemongrass Tea'}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Center Golden Brass Tray Handle Ornament */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
+          <div className="bg-[#1c130d]/95 border border-[#d4af37] px-3 py-1 rounded-full shadow-lg text-[10px] font-['Cinzel'] text-[#d4af37] tracking-[0.2em] uppercase font-bold">
+            ✦ SWIPE OR CLICK ✦
+          </div>
         </div>
+      </div>
+
+      {/* ── Subtitle Caption Strip ── */}
+      <div className="bg-[#041410]/95 px-4 py-3 border-t border-[#d4af37]/30 text-center">
+        <p className="font-['Playfair_Display'] italic text-xs text-[#f8fafc]/90 m-0 tracking-wide">
+          {scene.panelSub}
+        </p>
       </div>
     </div>
   );
@@ -501,62 +146,44 @@ function ComicPanelFace({ scene, optLeft, optRight }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SwipeGame({ question, onSelect }) {
-  // Group options into cards/pairs: [[opt0, opt1], [opt2, opt3], ...]
-  const cards = [];
-  const opts = question?.options || [];
-  for (let i = 0; i < opts.length; i += 2) {
-    if (opts[i + 1]) {
-      cards.push([opts[i], opts[i + 1]]);
-    } else if (opts[i]) {
-      cards.push([opts[i], { ...opts[i], label: 'SKIP →', id: opts[i].id }]);
-    }
-  }
-  if (cards.length === 0) {
-    cards.push([{ label: 'Option A', id: 1 }, { label: 'Option B', id: 2 }]);
+  const options = question?.options || [];
+  const cards   = [];
+
+  for (let i = 0; i < options.length; i += 2) {
+    cards.push({
+      optLeft:  options[i],
+      optRight: options[i + 1] || options[i],
+      scene:    SCENES[Math.floor(i / 2) % SCENES.length],
+    });
   }
 
   const [currentCardIdx, setCurrentCardIdx] = useState(0);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedIds, setSelectedIds]       = useState([]);
+  const [panDirection, setPanDirection]     = useState('center');
+  const [isExiting, setIsExiting]           = useState(false);
+  const isExitingRef                        = useRef(false);
 
-  const [optLeft, optRight] = cards[currentCardIdx] || cards[0];
-  const currentSubQuestion = optLeft?.sub_question || optRight?.sub_question || question.instruction || '👉 ปัดซ้ายหรือขวาเพื่อเลือก Vibe ของคุณในค่ำคืนนี้!';
+  const x      = useMotionValue(0);
+  const rotate = useTransform(x, [-300, 0, 300], [-12, 0, 12]);
 
-  // Pick Thai scene based on card index + question id (cycles through catalog)
-  const scene = THAI_SCENES[(question.id + currentCardIdx) % THAI_SCENES.length];
+  // Swipe highlight indicator badges
+  const leftIndicatorOpacity  = useTransform(x, [-160, -30, 0], [1, 0.4, 0]);
+  const rightIndicatorOpacity = useTransform(x, [0, 30, 160],   [0, 0.4, 1]);
 
-  // ── Prevent double-commit ──────────────────────────────────────────────────
-  const isExitingRef = useRef(false);
-  const [isExiting, setIsExiting] = useState(false);
+  const currentCard = cards[currentCardIdx];
+  const { optLeft, optRight, scene } = currentCard || {
+    optLeft:  options[0],
+    optRight: options[1] || options[0],
+    scene:    SCENES[0],
+  };
 
-  // ── Core motion value ──────────────────────────────────────────────────────
-  const x = useMotionValue(0);
-
-  // ── Derived transforms ─────────────────────────────────────────────────────
-  // Card rotation: tilts as you drag
-  const rotate = useTransform(x, [-240, 0, 240], [-22, 0, 22]);
-
-  // Comic stamp opacities
-  const nopeFade = useTransform(x, [-180, -40, 0],  [1, 0.3, 0]);
-  const yeahFade = useTransform(x, [0,   40, 180],  [0, 0.3, 1]);
-
-  // Speed-line overlay — brightens when near commit
-  const speedOpacity = useTransform(
-    x,
-    [-FLY_OUT_X * 0.55, -OFFSET_THRESHOLD, 0, OFFSET_THRESHOLD, FLY_OUT_X * 0.55],
-    [0.5, 0, 0, 0, 0.5]
-  );
-
-  // Drag hint text — most visible at rest
-  const hintOpacity = useTransform(x, [-60, 0, 60], [0, 0.3, 0]);
-
-  // ── Commit swipe ──────────────────────────────────────────────────────────
   function commitSwipe(dir) {
     if (isExitingRef.current) return;
     isExitingRef.current = true;
     setIsExiting(true);
 
     const target     = dir === 'left' ? -FLY_OUT_X : FLY_OUT_X;
-    const selectedId = dir === 'left' ? optLeft.id  : optRight.id;
+    const selectedId = dir === 'left' ? optLeft?.id : optRight?.id;
 
     animate(x, target, {
       ...SPRING_FLY,
@@ -564,8 +191,9 @@ export default function SwipeGame({ question, onSelect }) {
         const nextIds = [...selectedIds, selectedId];
         if (currentCardIdx < cards.length - 1) {
           setSelectedIds(nextIds);
-          setCurrentCardIdx(prev => prev + 1);
+          setCurrentCardIdx((prev) => prev + 1);
           x.set(0);
+          setPanDirection('center');
           isExitingRef.current = false;
           setIsExiting(false);
         } else {
@@ -575,7 +203,16 @@ export default function SwipeGame({ question, onSelect }) {
     });
   }
 
-  // ── Drag end handler ──────────────────────────────────────────────────────
+  function handleDragChange(_, info) {
+    if (info.offset.x < -25) {
+      setPanDirection('left');
+    } else if (info.offset.x > 25) {
+      setPanDirection('right');
+    } else {
+      setPanDirection('center');
+    }
+  }
+
   function handleDragEnd(_, { offset, velocity }) {
     if (isExitingRef.current) return;
     const flewLeft  = offset.x < -OFFSET_THRESHOLD || velocity.x < -VELOCITY_THRESHOLD;
@@ -583,209 +220,114 @@ export default function SwipeGame({ question, onSelect }) {
 
     if      (flewLeft)  commitSwipe('left');
     else if (flewRight) commitSwipe('right');
-    else                animate(x, 0, SPRING_SNAP);
+    else {
+      animate(x, 0, SPRING_SNAP);
+      setPanDirection('center');
+    }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="flex-1 flex flex-col items-center justify-between px-4 pt-3 pb-8 gap-4"
-      style={{ userSelect: 'none' }}
-    >
-
-      {/* ── Action instruction header ─────────────────────────────────── */}
+    <div className="flex-1 flex flex-col items-center justify-between px-3 pt-2 pb-8 gap-4 select-none w-full max-w-xl mx-auto font-['Prompt']">
+      
+      {/* ── Action Instruction Header ── */}
       <motion.div
         key={currentCardIdx}
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING_ENTER}
         className="text-center max-w-md px-2"
       >
-        <div className="inline-block bg-[#00f5ff] text-[#1a1a1a] font-['Bangers'] text-xs md:text-sm tracking-widest px-3 py-1 border-2 border-[#1a1a1a] shadow-[2px_2px_0_#1a1a1a] uppercase -rotate-2 mb-2">
-          ⚡ คำถาม SWIPE ที่ {currentCardIdx + 1} / {cards.length} ⚡
+        <div className="inline-block bg-[#0b132b]/95 border border-[#d4af37]/60 rounded-full px-4 py-1 shadow-md mb-2">
+          <span className="font-['Cinzel'] text-[#d4af37] text-xs tracking-[0.2em] uppercase font-bold">
+            ✨ TRAY SELECTION {currentCardIdx + 1} OF {cards.length} ✨
+          </span>
         </div>
-        <h3 className="text-lg md:text-xl font-['Chonburi'] text-[#ffde59] leading-snug tracking-wide">
-          {currentSubQuestion}
+        <h3 className="text-base sm:text-lg font-['Playfair_Display'] text-[#f8fafc] leading-snug tracking-wide font-light">
+          {question?.content || 'ปัดซ้ายหรือขวาเพื่อเลือกเครื่องดื่มจริงที่คุณปรารถนาสำหรับค่ำคืนนี้...'}
         </h3>
-        <p className="text-white/80 font-['Outfit'] text-sm mt-1">
-          ปัดซ้าย (NOPE) หรือปัดขวา (YEAH) เพื่อเลือกเส้นทางที่ใช่สำหรับคุณ
-        </p>
       </motion.div>
 
-      {/* ── Card stack ─────────────────────────────────────────────────── */}
-      <div
-        style={{
-          position:    'relative',
-          width:       268,
-          height:      368,
-          marginTop:   '10px',
-        }}
-      >
-        {/* Deck shadow cards (behind main) */}
-        <DeckShadow xMotion={x} layer={2} />
-        <DeckShadow xMotion={x} layer={1} />
+      {/* ── Swipeable Concierge Tray Card Stack ── */}
+      <div className="relative flex items-center justify-center w-[320px] sm:w-[350px] h-[450px] sm:h-[470px]">
+        
+        {/* Next Card Shadow Layer */}
+        {currentCardIdx < cards.length - 1 && <TrayCardShadow />}
 
-        {/* ── Main draggable card ──────────────────────────────────────── */}
+        {/* Active Draggable Tray Face */}
         <motion.div
-          style={{
-            x,
-            rotate,
-            touchAction:  'none',
-            position:     'absolute',
-            inset:        0,
-            cursor:       isExiting ? 'default' : 'grab',
-          }}
-          drag={isExiting ? false : 'x'}
+          key={`card-${currentCardIdx}`}
+          style={{ x, rotate, cursor: isExiting ? 'default' : 'grab' }}
+          drag={!isExiting ? 'x' : false}
           dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.82}
-          dragMomentum={false}
+          dragElastic={0.65}
+          onDrag={handleDragChange}
           onDragEnd={handleDragEnd}
-          whileDrag={{ cursor: 'grabbing', scale: 1.04 }}
-          whileHover={!isExiting ? { scale: 1.015 } : undefined}
-          initial={{ scale: 0.85, opacity: 0, y: 28 }}
-          animate={{ scale: 1,    opacity: 1, y: 0  }}
-          transition={SPRING_ENTER}
+          whileTap={{ cursor: 'grabbing', scale: 0.98 }}
+          className="absolute inset-0 flex items-center justify-center z-10"
         >
-          {/* Comic panel */}
-          <ComicPanelFace
+          <PhotorealisticTrayFace
             scene={scene}
             optLeft={optLeft}
             optRight={optRight}
+            panDirection={panDirection}
           />
 
-          {/* NOPE stamp (left swipe) */}
-          <ComicStamp
-            label="NOPE!"
-            sub={optLeft.label}
-            color="#ef233c"
-            rotation={-12}
-            opacity={nopeFade}
-            side="left"
-          />
-
-          {/* YEAH stamp (right swipe) */}
-          <ComicStamp
-            label="YEAH!"
-            sub={optRight.label}
-            color="#2ec4b6"
-            rotation={12}
-            opacity={yeahFade}
-            side="right"
-          />
-
-          {/* "Drag me" micro-hint */}
-          <motion.p
-            style={{
-              opacity:       hintOpacity,
-              position:      'absolute',
-              bottom:        '-1.75rem',
-              left:          0,
-              right:         0,
-              textAlign:     'center',
-              fontFamily:    COMIC_FONT,
-              fontSize:      '0.78rem',
-              letterSpacing: '0.12em',
-              color:         'rgba(255,255,255,0.45)',
-              pointerEvents: 'none',
-            }}
+          {/* Swipe Left Badge (`✦ OPTION I ✦`) */}
+          <motion.div
+            style={{ opacity: leftIndicatorOpacity }}
+            className="absolute top-8 right-6 z-20 bg-[#047857]/95 border-2 border-[#fef08a] px-4 py-2 rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl pointer-events-none transform rotate-12 flex flex-col items-center"
           >
-            ← DRAG TO CHOOSE →
-          </motion.p>
+            <span className="font-['Cinzel'] text-xs text-[#fef08a] font-bold tracking-[0.18em] uppercase">
+              ✦ SELECT OPTION I ✦
+            </span>
+            <span className="font-['Prompt'] text-[11px] text-white font-light mt-0.5 max-w-[140px] truncate">
+              {optLeft?.label}
+            </span>
+          </motion.div>
+
+          {/* Swipe Right Badge (`✦ OPTION II ✦`) */}
+          <motion.div
+            style={{ opacity: rightIndicatorOpacity }}
+            className="absolute top-8 left-6 z-20 bg-[#1c130d]/95 border-2 border-[#fef08a] px-4 py-2 rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl pointer-events-none transform -rotate-12 flex flex-col items-center"
+          >
+            <span className="font-['Cinzel'] text-xs text-[#fef08a] font-bold tracking-[0.18em] uppercase">
+              ✦ SELECT OPTION II ✦
+            </span>
+            <span className="font-['Prompt'] text-[11px] text-white font-light mt-0.5 max-w-[140px] truncate">
+              {optRight?.label}
+            </span>
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* ── Tap / click fallback buttons ────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...SPRING_ENTER, delay: 0.2 }}
-        style={{
-          display:        'flex',
-          gap:            '0.65rem',
-          width:          '100%',
-          maxWidth:       '320px',
-          marginTop:      '0.5rem',
-        }}
-      >
-        {/* Left / NOPE button */}
-        <motion.button
-          disabled={isExiting}
+      {/* ── Choice Button Bar (Left vs Right) ── */}
+      <div className="w-full max-w-sm grid grid-cols-2 gap-3 px-2">
+        <button
           onClick={() => commitSwipe('left')}
-          whileHover={!isExiting ? { scale: 1.04, y: -2 } : undefined}
-          whileTap={!isExiting ? { scale: 0.97 } : undefined}
-          style={{
-            flex:          1,
-            padding:       '0.75rem 0.75rem',
-            border:        '3px solid #1a1a1a',
-            borderRadius:  '10px',
-            background:    '#ffffff',
-            boxShadow:     '3px 3px 0 #1a1a1a',
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.75rem',
-            letterSpacing: '0.08em',
-            color:         '#1a1a1a',
-            cursor:        'pointer',
-            textAlign:     'center',
-            opacity:       isExiting ? 0.4 : 1,
-            transition:    'opacity 0.25s',
-            lineHeight:    1.2,
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'translate(2px, 2px)';
-            e.currentTarget.style.boxShadow = '1px 1px 0 #1a1a1a';
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = '';
-            e.currentTarget.style.boxShadow = '3px 3px 0 #1a1a1a';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = '';
-            e.currentTarget.style.boxShadow = '3px 3px 0 #1a1a1a';
-          }}
-        >
-          ← {optLeft.label}
-        </motion.button>
-
-        {/* Right / YEAH button */}
-        <motion.button
           disabled={isExiting}
-          onClick={() => commitSwipe('right')}
-          whileHover={!isExiting ? { scale: 1.04, y: -2 } : undefined}
-          whileTap={!isExiting ? { scale: 0.97 } : undefined}
-          style={{
-            flex:          1,
-            padding:       '0.75rem 0.75rem',
-            border:        '3px solid #1a1a1a',
-            borderRadius:  '10px',
-            background:    '#1a1a1a',
-            boxShadow:     '3px 3px 0 rgba(0,0,0,0.4)',
-            fontFamily:    COMIC_FONT,
-            fontSize:      '0.75rem',
-            letterSpacing: '0.08em',
-            color:         '#ffffff',
-            cursor:        'pointer',
-            textAlign:     'center',
-            opacity:       isExiting ? 0.4 : 1,
-            transition:    'opacity 0.25s',
-            lineHeight:    1.2,
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'translate(2px, 2px)';
-            e.currentTarget.style.boxShadow = '1px 1px 0 rgba(0,0,0,0.4)';
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = '';
-            e.currentTarget.style.boxShadow = '3px 3px 0 rgba(0,0,0,0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = '';
-            e.currentTarget.style.boxShadow = '3px 3px 0 rgba(0,0,0,0.4)';
-          }}
+          className="bg-[#043927]/90 border border-[#d4af37]/70 hover:border-[#fef08a] text-[#f8fafc] font-['Prompt'] text-xs py-3 px-3 rounded-2xl shadow-md backdrop-blur-xl transition-all hover:bg-[#047857] hover:scale-105 flex flex-col items-center justify-center cursor-pointer"
         >
-          {optRight.label} →
-        </motion.button>
-      </motion.div>
+          <span className="font-['Cinzel'] text-[#d4af37] text-[10px] tracking-wider uppercase font-bold">
+            ✦ ปัดซ้าย (OPTION I)
+          </span>
+          <span className="truncate max-w-[140px] mt-0.5 font-light">
+            {optLeft?.label}
+          </span>
+        </button>
 
+        <button
+          onClick={() => commitSwipe('right')}
+          disabled={isExiting}
+          className="bg-[#1c130d]/90 border border-[#d4af37]/70 hover:border-[#fef08a] text-[#f8fafc] font-['Prompt'] text-xs py-3 px-3 rounded-2xl shadow-md backdrop-blur-xl transition-all hover:bg-[#3f2b1d] hover:scale-105 flex flex-col items-center justify-center cursor-pointer"
+        >
+          <span className="font-['Cinzel'] text-[#d4af37] text-[10px] tracking-wider uppercase font-bold">
+            ปัดขวา (OPTION II) ✦
+          </span>
+          <span className="truncate max-w-[140px] mt-0.5 font-light">
+            {optRight?.label}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

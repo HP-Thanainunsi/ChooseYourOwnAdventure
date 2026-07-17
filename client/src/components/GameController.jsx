@@ -20,17 +20,20 @@ import LoadingScreen from './LoadingScreen';
 import StoryScrollContainer from './StoryScrollContainer';
 
 // ─── Map question.type → React component ──────────────────────────────────────
+// ─── Map question.type → React component ──────────────────────────────────────
 const COMPONENT_MAP = {
-  swipe:    SwipeGame,
+  swipe:     SwipeGame,
   drag_drop: MixologyGame,
-  tarot:    TarotGame,
+  mixology:  MixologyGame,
+  tarot:     TarotGame,
 };
 
 // ─── Human-readable labels per question type ──────────────────────────────────
 const TYPE_META = {
-  swipe:    { label: 'Swipe Your Truth',  icon: '👆' },
-  drag_drop: { label: 'Mix & Rank',        icon: '🧪' },
-  tarot:    { label: 'Draw a Card',        icon: '🃏' },
+  swipe:     { label: 'Concierge Tray Selection',  icon: '🛎️' },
+  drag_drop: { label: 'Benjarong Alchemy',         icon: '⚱️' },
+  mixology:  { label: 'Benjarong Alchemy',         icon: '⚱️' },
+  tarot:     { label: 'Royal Divination Cards',    icon: '✦' },
 };
 
 // ─── Game Status constants ────────────────────────────────────────────────────
@@ -49,7 +52,7 @@ export default function GameController() {
   const [result,         setResult]         = useState(null);
   const [error,          setError]          = useState(null);
   const [preloadProgress, setPreloadProgress] = useState(0);
-  const [preloadMsg,     setPreloadMsg]     = useState('Connecting to Bangkok Speakeasy Database…');
+  const [preloadMsg,     setPreloadMsg]     = useState('Connecting to Garden of Siam Sanctuary…');
 
   // ── Fetch game flow on mount ─────────────────────────────────────────────────
   useEffect(() => {
@@ -60,7 +63,7 @@ export default function GameController() {
     setError(null);
     setGameStatus(STATUS.LOADING);
     setPreloadProgress(15);
-    setPreloadMsg('Connecting to Bangkok Speakeasy Database…');
+    setPreloadMsg('Connecting to Garden of Siam Sanctuary…');
     try {
       const res = await fetch('/api/game-flow');
       if (!res.ok) throw new Error(`Server responded ${res.status}. Is the backend running on port 3000?`);
@@ -93,7 +96,7 @@ export default function GameController() {
       let loadedCount = 0;
       const totalImages = imageUrls.length;
 
-      setPreloadMsg(`Preloading High-Res Cyberpunk Graphics (0/${totalImages})…`);
+      setPreloadMsg(`Preloading Luxury 5-Star Assets (0/${totalImages})…`);
       setPreloadProgress(30);
 
       // Preload images into browser cache with safety timeout
@@ -108,7 +111,7 @@ export default function GameController() {
               settled = true;
               loadedCount++;
               setPreloadProgress(30 + Math.round((loadedCount / totalImages) * 70));
-              setPreloadMsg(`Preloading High-Res Cyberpunk Graphics (${loadedCount}/${totalImages})…`);
+              setPreloadMsg(`Preloading Luxury 5-Star Assets (${loadedCount}/${totalImages})…`);
               resolve();
             };
 
@@ -128,7 +131,7 @@ export default function GameController() {
       );
 
       setPreloadProgress(100);
-      setPreloadMsg('All assets loaded! Starting journey…');
+      setPreloadMsg('Sanctuary Ready! Welcome to Garden of Siam…');
       setTimeout(() => {
         setGameStatus(STATUS.PLAYING);
       }, 350);
@@ -167,13 +170,13 @@ export default function GameController() {
   // ─── Render: Error state ─────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen p-6">
-        <div className="glass rounded-3xl p-10 text-center max-w-md w-full animate-fade-in">
-          <div className="text-6xl mb-5">⚠️</div>
-          <h2 className="text-2xl font-bold text-white mb-3">Something went wrong</h2>
-          <p className="text-white/50 text-sm leading-relaxed mb-8">{error}</p>
-          <button onClick={fetchGameFlow} className="btn-primary w-full">
-            Try Again
+      <div className="flex items-center justify-center min-h-screen p-6 bg-[#041410]">
+        <div className="glass-panel rounded-3xl p-10 text-center max-w-md w-full animate-fade-in border border-[#d4af37]/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+          <div className="text-6xl mb-5">🥂</div>
+          <h2 className="text-2xl font-bold font-['Cinzel'] text-[#d4af37] mb-3">Sanctuary Notice</h2>
+          <p className="text-[#f8fafc]/70 text-sm leading-relaxed mb-8">{error}</p>
+          <button onClick={fetchGameFlow} className="btn-primary w-full py-3 rounded-xl bg-gradient-to-r from-[#047857] to-[#d4af37] text-white font-semibold">
+            Re-enter Sanctuary
           </button>
         </div>
       </div>
@@ -182,12 +185,12 @@ export default function GameController() {
 
   // ─── Render: Initial loading ──────────────────────────────────────────────────
   if (gameStatus === STATUS.LOADING) {
-    return <LoadingScreen message={preloadMsg || "Preparing your adventure…"} progressPercent={preloadProgress} />;
+    return <LoadingScreen message={preloadMsg || "Welcome to Garden of Siam…"} progressPercent={preloadProgress} />;
   }
 
   // ─── Render: Calculating result ───────────────────────────────────────────────
   if (gameStatus === STATUS.LOADING_RESULT) {
-    return <LoadingScreen message="The spirits are reading your soul…" mystical />;
+    return <LoadingScreen message="Our Head Mixologist is crafting your signature cocktail…" mystical />;
   }
 
   // ─── Render: Finished — show drink result ────────────────────────────────────
@@ -197,7 +200,7 @@ export default function GameController() {
 
   // ─── Render: Playing (Scrollytelling 3D Parallax Flow) ───────────────────────
   return (
-    <main className="min-h-screen w-full bg-[#1a1a1a]">
+    <main className="min-h-screen w-full bg-[#041410]">
       <StoryScrollContainer
         questions={questions}
         userSelections={userSelections}

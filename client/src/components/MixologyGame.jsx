@@ -1,27 +1,18 @@
 /**
- * MixologyGame.jsx — Thai Street-Style Plastic Bag · Comic Sticker Ingredients
+ * MixologyGame.jsx — 5-Star Hotel Benjarong Crystal Alchemy Jar (Garden of Siam)
  * ─────────────────────────────────────────────────────────────────────────────
  * Props:
- *   question  { id, type, content, options: [{id, label}, ...] }
- *   onSelect  (optionId: number) => void
+ *   question  { id, type, content, options: [{id, label, image_url}, ...] }
+ *   onSelect  (optionIds: number[]) => void
  *
- * Design:
- *   • Drop zone: retro Thai plastic bag (ถุงพลาสติก) with red rubber band
- *     rendered as an SVG — liquid fill rises with spring animation on drop
- *   • Ingredient cards: comic-book stickers with thick white border + black
- *     drop-shadow, representing Thai herbs/ingredients with bright gradients
- *   • SPLASH!/PLOP!/SPLAT! pop-art burst animation over the bag when an
- *     item lands inside
- *
- * Behaviour:
- *   • @dnd-kit PointerSensor + TouchSensor handle drag
- *   • Hovering the bag → bag glows + subtle pulse scale
- *   • Drop → SPLASH! starburst animation → confirm button appears
- *   • Confirm → onSelect(item.id); reset button lets user re-pick
- *
- * APIs:
- *   @dnd-kit/core   DndContext, useDraggable, useDroppable, DragOverlay
- *   framer-motion   motion.div, AnimatePresence, motion.rect (SVG fill)
+ * Features & Requirements:
+ *   1. Floating Ingredients Surrounding the Glass Jar (`วัตถุดิบ ให้ลอยรอบๆ โหลแก้ว`):
+ *      Transparent borderless PNG options levitate in an orbital ring ALL AROUND
+ *      the central Benjarong Crystal Jar with independent bobbing and rotating physics.
+ *   2. Multiple Ingredient Infusion (`มาผสมกันหลายๆตัว และเก็บ Score`):
+ *      Users Drag & Drop OR Click multiple ingredients into the crystal decanter.
+ *   3. Dynamic Color Blending Glass Decanter (`ขวดโหลแก้วใสผสมสีตามสีวัตถุดิบ`):
+ *      Liquid color dynamically blends RGB channels of all dropped botanical colors!
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -30,7 +21,6 @@ import {
   DndContext,
   useDraggable,
   useDroppable,
-  DragOverlay,
   PointerSensor,
   TouchSensor,
   useSensor,
@@ -39,697 +29,471 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ─── Ingredient sticker themes ────────────────────────────────────────────────
-// Mapped to Thai ingredients; cycles for any number of options.
-const STICKER_THEMES = [
-  {
-    emoji:    '🌿',
-    name:     'Pandan',
-    subtext:  'ใบเตย',
-    bg:       'linear-gradient(145deg, #22c55e 0%, #15803d 100%)',
-    glow:     'rgba(34,197,94,0.6)',
-    liquid:   '#4ade80',
-    pop:      'SPLASH!',
-    rotate:   -8,
-  },
-  {
-    emoji:    '🌶️',
-    name:     "Bird's Eye",
-    subtext:  'พริกขี้หนู',
-    bg:       'linear-gradient(145deg, #ef4444 0%, #b91c1c 100%)',
-    glow:     'rgba(239,68,68,0.6)',
-    liquid:   '#f87171',
-    pop:      'PLOP!',
-    rotate:   5,
-  },
-  {
-    emoji:    '🍋',
-    name:     'Kaffir Lime',
-    subtext:  'มะกรูด',
-    bg:       'linear-gradient(145deg, #eab308 0%, #a16207 100%)',
-    glow:     'rgba(234,179,8,0.6)',
-    liquid:   '#fbbf24',
-    pop:      'SPLAT!',
-    rotate:   -4,
-  },
-  {
-    emoji:    '🌱',
-    name:     'Thai Basil',
-    subtext:  'โหระพา',
-    bg:       'linear-gradient(145deg, #8b5cf6 0%, #6d28d9 100%)',
-    glow:     'rgba(139,92,246,0.6)',
-    liquid:   '#a78bfa',
-    pop:      'ZAP!',
-    rotate:   9,
-  },
-  {
-    emoji:    '🧄',
-    name:     'Lemongrass',
-    subtext:  'ตะไคร้',
-    bg:       'linear-gradient(145deg, #f59e0b 0%, #d97706 100%)',
-    glow:     'rgba(245,158,11,0.6)',
-    liquid:   '#fcd34d',
-    pop:      'BOOF!',
-    rotate:   -6,
-  },
+// ─── Dynamic Botanical Color Palette & Fallback Icons ─────────────────────────
+const PALETTE = [
+  { color: '#34d399', glow: 'rgba(52, 211, 153, 0.6)', icon: '🌿', name: 'Siamese Pandan' },
+  { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.6)', icon: '🥃', name: 'Wild Cinnamon & Ylang' },
+  { color: '#60a5fa', glow: 'rgba(96, 165, 250, 0.6)', icon: '🪷', name: 'Silver Needle & Jasmine' },
+  { color: '#fde047', glow: 'rgba(253, 224, 71, 0.6)', icon: '🍯', name: 'Cardamom & Wild Honey' },
+  { color: '#f43f5e', glow: 'rgba(244, 63, 94, 0.6)',  icon: '🌺', name: 'Royal Lotus Dew' },
+  { color: '#a3e635', glow: 'rgba(163, 230, 53, 0.6)', icon: '🍋', name: 'Kaffir Lime Zest' },
 ];
 
-// ─── SVG Thai Plastic Bag ─────────────────────────────────────────────────────
-// Bag SVG constants
-const BW = 120;    // total svg width
-const BH = 190;    // total svg height
-const BCX = 60;    // body centre x
-const BCY = 130;   // body centre y
-const BRX = 52;    // body rx
-const BRY = 58;    // body ry
-const CLIP_ID = 'bag-body-clip-mg';
+function getBotanicalTheme(idx = 0) {
+  return PALETTE[idx % PALETTE.length];
+}
 
-function ThaiPlasticBag({ fillPercent, liquidColor, isOver, hasItem }) {
-  // y of liquid top: fillPercent=0 → rect starts below bag; 100% → fills bag
-  const liquidTopY = BCY + BRY - (fillPercent / 100) * (BRY * 2);
+// ─── Dynamic RGB Color Blending Engine (`ผสมสีตาม สี วัสถุดิบ`) ────────────────
+function hexToRgb(hex) {
+  const clean = hex.replace('#', '');
+  const bigint = Number.parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+}
 
-  const bagStroke  = isOver ? liquidColor : 'rgba(140,200,240,0.55)';
-  const bagDash    = !hasItem && !isOver ? '5 3' : '0';
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+}
+
+function blendIngredientColors(items = []) {
+  if (!items || items.length === 0) return '#34d399'; // default emerald
+  if (items.length === 1) return items[0].elixirColor || '#34d399';
+
+  let totalR = 0, totalG = 0, totalB = 0;
+  items.forEach(item => {
+    const { r, g, b } = hexToRgb(item.elixirColor || '#34d399');
+    totalR += r;
+    totalG += g;
+    totalB += b;
+  });
+
+  const count = items.length;
+  return rgbToHex(totalR / count, totalG / count, totalB / count);
+}
+
+// ─── Orbital Positioning Map Around Central Jar (`ลอยรอบๆ โหลแก้ว`) ─────────────
+function getOrbitalPosition(idx, total) {
+  // Pre-calculated orbital coordinates around the central vessel
+  const ORBITAL_SLOTS = [
+    { top: '-4%', left: '4%' },     // 0: Top-Left
+    { top: '-4%', right: '4%' },    // 1: Top-Right
+    { top: '38%', left: '-5%' },    // 2: Middle-Left
+    { top: '38%', right: '-5%' },   // 3: Middle-Right
+    { bottom: '-2%', left: '25%' }, // 4: Bottom-Center
+    { bottom: '-2%', right: '15%' } // 5: Extra Slot
+  ];
+  return ORBITAL_SLOTS[idx % ORBITAL_SLOTS.length];
+}
+
+// ─── Crystal Clear Benjarong Glass Decanter (`SVG ขวดโหลใส`) ────────────────
+const VW  = 180;
+const VH  = 240;
+const VCX = 90;
+const VCY = 155;
+const VRX = 72;
+const VRY = 72;
+const CLIP_ID = 'crystal-jar-clip-orbital';
+
+function CrystalDecanter({ fillPercent, blendedColor, isOver, droppedItems }) {
+  const liquidTopY = VCY + VRY - (fillPercent / 100) * (VRY * 2);
+  const vesselStroke = isOver ? '#fef08a' : 'rgba(212, 175, 55, 0.85)';
 
   return (
-    <svg
-      width={BW}
-      height={BH}
-      viewBox={`0 0 ${BW} ${BH}`}
-      style={{ overflow: 'visible' }}
-    >
+    <svg width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`} className="overflow-visible select-none">
       <defs>
-        {/* Clip to bag ellipse for liquid fill */}
         <clipPath id={CLIP_ID}>
-          <ellipse cx={BCX} cy={BCY} rx={BRX} ry={BRY} />
+          <ellipse cx={VCX} cy={VCY} rx={VRX} ry={VRY} />
         </clipPath>
 
-        {/* Liquid gradient */}
-        <linearGradient id="liquid-gradient-mg" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%"   stopColor={liquidColor} stopOpacity="0.88" />
-          <stop offset="100%" stopColor={liquidColor} stopOpacity="0.38" />
+        <linearGradient id="jar-liquid-grad-orbital" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stopColor={blendedColor} stopOpacity="0.95" />
+          <stop offset="50%"  stopColor={blendedColor} stopOpacity="0.75" />
+          <stop offset="100%" stopColor="#041410" stopOpacity="0.9" />
         </linearGradient>
 
-        {/* Plastic sheen on bag body */}
-        <linearGradient id="plastic-sheen-mg" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.0)" />
-          <stop offset="28%"  stopColor="rgba(255,255,255,0.22)" />
-          <stop offset="55%"  stopColor="rgba(255,255,255,0.08)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0.0)" />
+        <linearGradient id="jar-crystal-sheen-orbital" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor="rgba(255,255,255,0.45)" />
+          <stop offset="25%"  stopColor="rgba(255,255,255,0.1)" />
+          <stop offset="50%"  stopColor="rgba(255,255,255,0.0)" />
+          <stop offset="80%"  stopColor="rgba(255,255,255,0.2)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0.4)" />
         </linearGradient>
-
-        {/* Glow filter when isOver */}
-        <filter id="bag-glow-filter">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
       </defs>
 
-      {/* ── Rubber band — stacked red ellipses to show twist ──────────────── */}
-      {/* Bottom ring (thickest) */}
-      <ellipse cx={BCX} cy={30} rx={14} ry={5.5}
-        fill="#dc2626" stroke="#991b1b" strokeWidth="1" />
-      {/* Middle ring */}
-      <ellipse cx={BCX} cy={24} rx={12} ry={4.5}
-        fill="none" stroke="#ef4444" strokeWidth="3.5" />
-      {/* Top ring (thinnest) */}
-      <ellipse cx={BCX} cy={18} rx={10} ry={3.5}
-        fill="none" stroke="#dc2626" strokeWidth="2.5" opacity="0.8" />
-      {/* Highlight on rubber band */}
-      <ellipse cx={BCX - 3} cy={22} rx={4} ry={2}
-        fill="rgba(255,200,200,0.35)" />
-
-      {/* ── Neck — gathered plastic lines ─────────────────────────────────── */}
-      <path
-        d={`M ${BCX - 10},33 C ${BCX - 10},50 ${BCX - BRX},60 ${BCX - BRX},72`}
-        fill="none" stroke="rgba(150,200,230,0.35)" strokeWidth="1.2"
-      />
-      <path
-        d={`M ${BCX + 10},33 C ${BCX + 10},50 ${BCX + BRX},60 ${BCX + BRX},72`}
-        fill="none" stroke="rgba(150,200,230,0.35)" strokeWidth="1.2"
-      />
-      {/* Central gather lines */}
-      {[-4, 0, 4].map((off) => (
-        <path key={off}
-          d={`M ${BCX + off},33 C ${BCX + off * 3},55 ${BCX + off * 5},65 ${BCX + off * 6},72`}
-          fill="none" stroke="rgba(150,200,230,0.2)" strokeWidth="0.8"
-        />
-      ))}
-
-      {/* ── Bag body background (clear plastic tint) ──────────────────────── */}
-      <ellipse cx={BCX} cy={BCY} rx={BRX} ry={BRY}
-        fill="rgba(210,235,255,0.08)"
-      />
-
-      {/* ── Liquid fill (animated with framer-motion) ──────────────────────── */}
-      <motion.rect
-        x={0}
-        width={BW}
-        height={BH}
-        fill="url(#liquid-gradient-mg)"
-        clipPath={`url(#${CLIP_ID})`}
-        animate={{ y: liquidTopY }}
-        initial={{ y: BCY + BRY + 5 }}
-        transition={{ type: 'spring', stiffness: 70, damping: 14 }}
-      />
-
-      {/* ── Bag outline ───────────────────────────────────────────────────── */}
+      {/* Hover Pulse Ring around Jar */}
       {isOver && (
-        <ellipse cx={BCX} cy={BCY} rx={BRX} ry={BRY}
+        <ellipse
+          cx={VCX}
+          cy={VCY}
+          rx={VRX + 16}
+          ry={VRY + 16}
           fill="none"
-          stroke={liquidColor}
-          strokeWidth="6"
-          opacity="0.28"
-          filter="url(#bag-glow-filter)"
+          stroke={blendedColor}
+          strokeWidth="3.5"
+          strokeOpacity="0.8"
+          strokeDasharray="8 4"
+          className="animate-pulse"
         />
       )}
-      <ellipse cx={BCX} cy={BCY} rx={BRX} ry={BRY}
-        fill="url(#plastic-sheen-mg)"
-        stroke={bagStroke}
-        strokeWidth={isOver ? 2.5 : 1.8}
-        strokeDasharray={bagDash}
-        style={{ transition: 'stroke 0.2s, stroke-width 0.2s, stroke-dasharray 0.25s' }}
+
+      {/* Golden Teakwood Base Pedestal */}
+      <path d="M 50 226 L 130 226 L 120 214 L 60 214 Z" fill="#1c130d" stroke="#d4af37" strokeWidth="2" />
+      <path d="M 56 214 L 124 214 L 114 204 L 66 204 Z" fill="#043927" stroke="#d4af37" strokeWidth="1.5" />
+
+      {/* Crystal Jar Neck & Gold Seal */}
+      <rect x="76" y="48" width="28" height="38" rx="6" fill="rgba(255,255,255,0.15)" stroke={vesselStroke} strokeWidth="2" />
+      <ellipse cx="90" cy="48" rx="18" ry="7" fill="#1c130d" stroke="#d4af37" strokeWidth="2" />
+      <ellipse cx="90" cy="68" rx="15" ry="4" fill="none" stroke="#d4af37" strokeWidth="1.5" strokeOpacity="0.6" />
+
+      {/* Dynamic Blended Liquid Fill */}
+      <g clipPath={`url(#${CLIP_ID})`}>
+        <motion.rect
+          x={VCX - VRX}
+          y={liquidTopY}
+          width={VRX * 2}
+          height={VH}
+          fill="url(#jar-liquid-grad-orbital)"
+          initial={{ y: VCY + VRY }}
+          animate={{ y: liquidTopY }}
+          transition={{ type: 'spring', stiffness: 140, damping: 18 }}
+        />
+
+        {/* Floating Botanical Bubbles & Color Particles Inside Liquid */}
+        {droppedItems?.length > 0 && (
+          <>
+            {droppedItems.map((item, i) => (
+              <motion.circle
+                key={`bubble-${item.id}-${i}`}
+                cx={VCX - 35 + ((i * 27) % 70)}
+                cy={liquidTopY + 18 + ((i * 15) % 45)}
+                r={4 + (i % 4)}
+                fill={item.elixirColor || '#fef08a'}
+                opacity="0.85"
+                animate={{
+                  y: [0, -18, 0],
+                  scale: [1, 1.25, 1],
+                  opacity: [0.8, 1, 0.6],
+                }}
+                transition={{ duration: 2.2 + (i * 0.4), repeat: Infinity, ease: 'easeInOut' }}
+              />
+            ))}
+            <ellipse cx={VCX} cy={liquidTopY} rx={VRX - 10} ry={8} fill="rgba(255,255,255,0.28)" />
+          </>
+        )}
+      </g>
+
+      {/* Transparent Crystal Glass Bowl Outer Shell */}
+      <ellipse
+        cx={VCX}
+        cy={VCY}
+        rx={VRX}
+        ry={VRY}
+        fill="url(#jar-crystal-sheen-orbital)"
+        stroke={vesselStroke}
+        strokeWidth={isOver || (droppedItems?.length || 0) > 0 ? '3.5' : '2.5'}
+        strokeDasharray={(droppedItems?.length || 0) === 0 && !isOver ? '6 4' : '0'}
       />
 
-      {/* ── Plastic highlight (left sheen) ────────────────────────────────── */}
-      <ellipse
-        cx={BCX - BRX * 0.42}
-        cy={BCY - BRY * 0.3}
-        rx={BRX * 0.18}
-        ry={BRY * 0.28}
-        fill="rgba(255,255,255,0.20)"
-      />
+      {/* Elegant Benjarong Gold Leaf Trim on Glass */}
+      <path d="M 54 155 Q 90 178 126 155" fill="none" stroke="#d4af37" strokeWidth="1.5" strokeOpacity="0.8" />
+      <path d="M 62 138 Q 90 158 118 138" fill="none" stroke="#d4af37" strokeWidth="1" strokeOpacity="0.5" />
+      <circle cx="90" cy="158" r="4.5" fill="#d4af37" opacity="0.9" />
     </svg>
   );
 }
 
-// ─── Comic starburst burst shape (12-pointed) ─────────────────────────────────
-const STARBURST_CLIP =
-  'polygon(50% 0%, 60% 38%, 98% 22%, 74% 50%, 98% 78%, 60% 62%, 50% 100%, 40% 62%, 2% 78%, 26% 50%, 2% 22%, 40% 38%)';
+// ─── Droppable Center Vessel Zone (`โหลแก้วตรงกลาง`) ────────────────────────────
+function DroppableVesselZone({ isOver, droppedItems, onRemoveItem, onClearAll }) {
+  const { setNodeRef } = useDroppable({ id: 'benjarong-vessel-zone' });
+  const fillPercent = Math.min(96, droppedItems.length * 32);
+  const blendedColor = blendIngredientColors(droppedItems);
 
-function ComicBurst({ word, color, onExited }) {
   return (
     <motion.div
-      initial={{ scale: 0, rotate: -22, opacity: 1 }}
-      animate={{ scale: [0, 2.2, 1.7], rotate: [-22, 10, -6, 0] }}
-      exit={{ scale: 0, opacity: 0, transition: { duration: 0.3 } }}
-      transition={{ duration: 0.55, ease: [0.34, 1.56, 0.64, 1] }}
-      onAnimationComplete={onExited}
-      style={{
-        position:       'absolute',
-        inset:          0,
-        display:        'flex',
-        alignItems:     'center',
-        justifyContent: 'center',
-        zIndex:         30,
-        pointerEvents:  'none',
-      }}
-    >
-      {/* Starburst background */}
-      <div style={{
-        position:  'absolute',
-        width:     130,
-        height:    130,
-        background: color,
-        clipPath:  STARBURST_CLIP,
-        opacity:   0.92,
-      }} />
-      {/* Action word */}
-      <p style={{
-        position:      'relative',
-        fontFamily:    '"Bangers", Impact, "Arial Black", cursive',
-        fontSize:      '1.8rem',
-        letterSpacing: '0.05em',
-        color:         '#ffffff',
-        textShadow:    '3px 3px 0 #1a1a1a, -1px -1px 0 #1a1a1a, 1px -1px 0 #1a1a1a, -1px 1px 0 #1a1a1a',
-        margin:        0,
-        userSelect:    'none',
-      }}>
-        {word}
-      </p>
-    </motion.div>
-  );
-}
-
-// ─── Ingredient sticker card ───────────────────────────────────────────────────
-function IngredientSticker({ item, theme, isDropped, isActiveOverlay }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id:       item.id,
-    data:     { item, theme },
-    disabled: isDropped,
-  });
-
-  const translateStyle = { transform: CSS.Translate.toString(transform) };
-
-  const baseCard = (
-    <motion.div
-      whileHover={!isDropped && !isActiveOverlay ? {
-        scale: 1.08,
-        y: -6,
-        boxShadow: '0 0 20px #00f0ff, 0 0 35px #ff007f, 0 0 0 3px #00f0ff',
-        transition: { type: 'spring', stiffness: 450, damping: 15 }
-      } : undefined}
-      whileTap={!isDropped ? { scale: 0.92 } : undefined}
-      style={{
-        background:   theme.bg,
-        border:       '4px solid #ffffff',
-        borderRadius: '14px',
-        boxShadow:    isActiveOverlay
-          ? `0 0 0 2.5px #1a1a1a, 8px 8px 0 rgba(0,0,0,0.5), 0 0 28px ${theme.glow}`
-          : isDragging
-          ? 'none'
-          : `0 0 0 2.5px #1a1a1a, 4px 4px 0 #1a1a1a`,
-        padding:      '0.65rem 0.6rem',
-        display:      'flex',
-        flexDirection:'column',
-        alignItems:   'center',
-        gap:          '0.25rem',
-        width:        '88px',
-        cursor:       isActiveOverlay ? 'grabbing' : isDropped ? 'default' : 'grab',
-        transform:    isActiveOverlay ? 'none' : `rotate(${theme.rotate}deg)`,
-        opacity:      isDropped ? 0.22 : 1,
-        transition:   'opacity 0.3s, box-shadow 0.2s',
-        userSelect:   'none',
-      }}
-    >
-      {/* Emoji */}
-      <span style={{
-        fontSize:  '2.2rem',
-        lineHeight: 1,
-        filter:    isActiveOverlay ? `drop-shadow(0 0 10px ${theme.glow})` : 'drop-shadow(1px 2px 0 rgba(0,0,0,0.3))',
-      }}>
-        {theme.emoji}
-      </span>
-
-      {/* Name */}
-      <p style={{
-        fontFamily:    '"Bangers", Impact, "Arial Black", cursive',
-        fontSize:      '0.72rem',
-        letterSpacing: '0.07em',
-        color:         '#ffffff',
-        textShadow:    '1px 1px 0 rgba(0,0,0,0.5)',
-        margin:        0,
-        textAlign:     'center',
-        lineHeight:    1.1,
-      }}>
-        {theme.name}
-      </p>
-
-      {/* Thai sub-label */}
-      <p style={{
-        fontFamily: 'Outfit, sans-serif',
-        fontSize:   '0.55rem',
-        color:      'rgba(255,255,255,0.7)',
-        margin:     0,
-        letterSpacing: '0.04em',
-      }}>
-        {theme.subtext}
-      </p>
-    </motion.div>
-  );
-
-  // For the overlay (dragging copy) we don't need dnd ref/listeners
-  if (isActiveOverlay) return baseCard;
-
-  return (
-    <div
       ref={setNodeRef}
-      style={{ ...translateStyle, touchAction: 'none', flexShrink: 0 }}
-      {...listeners}
-      {...attributes}
+      animate={isOver ? { scale: 1.06 } : { scale: 1 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+      className="relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-3xl border border-[#d4af37]/60 bg-[#041410]/85 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_50px_rgba(212,175,55,0.25)] backdrop-blur-2xl w-[260px] sm:w-[290px] z-20"
     >
-      {baseCard}
-    </div>
-  );
-}
+      {/* Crystal Decanter */}
+      <CrystalDecanter
+        fillPercent={fillPercent}
+        blendedColor={blendedColor}
+        isOver={isOver}
+        droppedItems={droppedItems}
+      />
 
-// ─── Plastic bag drop zone ─────────────────────────────────────────────────────
-function BagDropZone({ droppedItem, droppedTheme, showBurst, onBurstDone, isAnyDragging }) {
-  const { setNodeRef, isOver } = useDroppable({ id: 'bag' });
-  const fillPercent  = droppedItem ? 75 : 0;
-  const liquidColor  = droppedTheme?.liquid ?? 'rgba(255,255,255,0.3)';
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        position:       'relative',
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
-        gap:            '0.5rem',
-        padding:        '0.75rem 1rem 0.5rem',
-        borderRadius:   '1.5rem',
-        background:     isOver ? `${liquidColor}12` : 'transparent',
-        transition:     'background 0.25s',
-      }}
-    >
-      {/* Hint label above bag */}
-      <AnimatePresence mode="wait">
-        {!droppedItem && (
-          <motion.p
-            key="hint"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isOver ? 1 : isAnyDragging ? 0.7 : 0.35 }}
-            exit={{ opacity: 0 }}
-            style={{
-              fontFamily:    '"Bangers", Impact, "Arial Black", cursive',
-              fontSize:      '0.8rem',
-              letterSpacing: '0.18em',
-              color:         isOver ? liquidColor : 'rgba(255,255,255,0.5)',
-              transition:    'color 0.2s',
-              margin:        0,
-            }}
+      {/* Dynamic Blended Status Badge */}
+      <AnimatePresence>
+        {droppedItems.length > 0 && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: -10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="absolute top-3 bg-[#043927]/95 border border-[#d4af37] px-3.5 py-1 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl flex items-center gap-2"
           >
-            {isOver ? '↓ DROP IT IN!' : isAnyDragging ? '↓ POUR IT HERE' : 'DRAG INGREDIENT'}
-          </motion.p>
-        )}
-        {droppedItem && (
-          <motion.p
-            key="poured"
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{
-              fontFamily:    '"Bangers", Impact, "Arial Black", cursive',
-              fontSize:      '0.8rem',
-              letterSpacing: '0.12em',
-              color:         liquidColor,
-              textShadow:    `0 0 10px ${liquidColor}`,
-              margin:        0,
-            }}
-          >
-            {droppedTheme?.emoji} {droppedItem.label}
-          </motion.p>
+            <span className="w-2.5 h-2.5 rounded-full animate-ping" style={{ backgroundColor: blendedColor }} />
+            <span className="font-['Cinzel'] text-[11px] text-[#fef08a] tracking-[0.16em] font-bold uppercase">
+              ✦ {droppedItems.length === 1 ? 'SINGLE INFUSION' : `BLENDED ${droppedItems.length} BOTANICALS`} ✦
+            </span>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Bag SVG + burst animation */}
-      <motion.div
-        animate={isOver ? { scale: [1, 1.05, 1.03] } : { scale: 1 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        style={{ position: 'relative' }}
-      >
-        <ThaiPlasticBag
-          fillPercent={fillPercent}
-          liquidColor={liquidColor}
-          isOver={isOver}
-          hasItem={!!droppedItem}
-        />
-
-        {/* SPLASH! burst animation */}
-        <AnimatePresence>
-          {showBurst && droppedTheme && (
-            <ComicBurst
-              key="burst"
-              word={droppedTheme.pop}
-              color={droppedTheme.liquid}
-              onExited={onBurstDone}
-            />
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* "Empty bag" label */}
-      {!droppedItem && !isAnyDragging && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.18 }}
-          style={{
-            fontFamily: '"Bangers", Impact, cursive',
-            fontSize:   '0.6rem',
-            color:      'white',
-            letterSpacing: '0.12em',
-            margin:     0,
-          }}
-        >
-          ถุงพลาสติก EMPTY
-        </motion.p>
+      {/* Dropped Botanical Tags inside Jar (Removable) */}
+      {droppedItems.length > 0 && (
+        <div className="w-full mt-3 flex flex-wrap items-center justify-center gap-1.5 max-h-24 overflow-y-auto px-1">
+          {droppedItems.map((item, idx) => (
+            <motion.div
+              key={`dropped-${item.id}-${idx}`}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="bg-[#1c130d]/95 border border-[#d4af37]/70 rounded-full py-0.5 px-2.5 flex items-center gap-1.5 shadow-sm"
+            >
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.elixirColor }} />
+              <span className="font-['Prompt'] text-[11px] text-[#f8fafc] max-w-[110px] truncate font-light">
+                {item.label}
+              </span>
+              <button
+                onClick={() => onRemoveItem(item.id)}
+                className="text-xs text-[#d4af37] hover:text-[#f43f5e] font-bold px-1 transition-colors"
+                title="Remove ingredient"
+              >
+                ✕
+              </button>
+            </motion.div>
+          ))}
+        </div>
       )}
-    </div>
+
+      {/* Clear All Button */}
+      {droppedItems.length > 1 && (
+        <button
+          onClick={onClearAll}
+          className="mt-2.5 font-['Cinzel'] text-[0.65rem] text-[#d4af37]/70 hover:text-[#fef08a] tracking-[0.2em] uppercase transition-colors"
+        >
+          [ ✕ CLEAR ALL ]
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Floating Surrounding Ingredient Item (`ลอยรอบๆ โหลแก้ว`) ────────────────
+function OrbitalFloatingItem({ option, themeIdx, isDropped, onToggle, total }) {
+  const theme = getBotanicalTheme(themeIdx);
+  const orbitalPos = getOrbitalPosition(themeIdx, total);
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: option.id,
+    data: { option, themeIdx, elixirColor: theme.color, icon: theme.icon },
+  });
+
+  let itemOpacity = 1;
+  if (isDragging) itemOpacity = 0.3;
+  else if (isDropped) itemOpacity = 0.4;
+
+  const style = {
+    ...orbitalPos,
+    transform: CSS.Translate.toString(transform),
+    opacity: itemOpacity,
+  };
+
+  // Graceful orbital floating & rotation physics around the center jar
+  const floatAnimation = isDropped
+    ? {}
+    : {
+        y: [0, -12, 0, 10, 0],
+        x: [0, (themeIdx % 2 === 0 ? 8 : -8), 0, (themeIdx % 2 === 0 ? -6 : 6), 0],
+        rotate: [-3, 3.5, -1.5, 2.5, -3],
+        scale: [1, 1.05, 1],
+      };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      animate={floatAnimation}
+      transition={{
+        duration: 4.2 + (themeIdx % 3) * 0.9,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+      whileHover={{ scale: 1.15, zIndex: 50 }}
+      onClick={() => onToggle(option, themeIdx, theme)}
+      className={`absolute z-30 flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl cursor-pointer select-none transition-all w-28 sm:w-32 ${
+        isDropped ? 'grayscale opacity-50' : 'hover:brightness-115'
+      }`}
+    >
+      {/* Borderless Image OR Glowing Botanical Icon (`png ไม่เอากรอบ ลอยรอบๆ`) */}
+      <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-1 pointer-events-none">
+        {option.image_url ? (
+          <img
+            src={option.image_url}
+            alt={option.label}
+            className="w-full h-full object-contain drop-shadow-[0_14px_24px_rgba(212,175,55,0.5)] filter"
+          />
+        ) : (
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center text-3xl sm:text-4xl drop-shadow-[0_10px_20px_rgba(212,175,55,0.45)]"
+            style={{ backgroundColor: 'rgba(4, 57, 39, 0.7)', border: `1px solid ${theme.color}` }}
+          >
+            {theme.icon}
+          </div>
+        )}
+
+        {/* Selected Checkmark Badge */}
+        {isDropped && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#047857] border border-[#fef08a] flex items-center justify-center text-white text-[10px] font-bold shadow-md">
+            ✓
+          </div>
+        )}
+      </div>
+
+      {/* Glowing Floating Label (No Card Box Border!) */}
+      <div className="text-center w-full pointer-events-none bg-[#041410]/75 backdrop-blur-md px-2 py-1 rounded-xl border border-[#d4af37]/40 shadow-sm">
+        <span className="font-['Cinzel'] text-[0.58rem] text-[#d4af37] tracking-[0.14em] font-bold uppercase block truncate">
+          ✦ {theme.name}
+        </span>
+        <p className="font-['Prompt'] text-[11px] text-[#f8fafc] font-light leading-snug m-0 line-clamp-1">
+          {option.label}
+        </p>
+      </div>
+    </motion.div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function MixologyGame({ question, onSelect }) {
-  const options = question.options;
-
-  const [activeId,    setActiveId]    = useState(null);
-  const [droppedItem, setDroppedItem] = useState(null);
-  const [showBurst,   setShowBurst]   = useState(false);
-  const [confirmed,   setConfirmed]   = useState(false);
+  const options = question?.options || [];
+  const [droppedItems, setDroppedItems] = useState([]);
+  const [activeDragItem, setActiveDragItem] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 100, tolerance: 6 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 150, tolerance: 6 } })
   );
 
-  const activeOption = options.find((o) => o.id === activeId);
-  const activeTheme  = activeOption
-    ? STICKER_THEMES[options.indexOf(activeOption) % STICKER_THEMES.length]
-    : null;
+  function handleDragStart(event) {
+    setActiveDragItem(event.active.data.current);
+  }
 
-  const droppedTheme = droppedItem
-    ? STICKER_THEMES[options.indexOf(droppedItem) % STICKER_THEMES.length]
-    : null;
-
-  // ── DnD handlers ──────────────────────────────────────────────────────────
-  function handleDragStart({ active }) { setActiveId(active.id); }
-
-  function handleDragEnd({ active, over }) {
-    setActiveId(null);
-    if (over?.id === 'bag' && !droppedItem) {
-      const item = options.find((o) => o.id === active.id);
-      setDroppedItem(item);
-      setShowBurst(true);   // trigger pop-art burst animation
+  function handleDragEnd(event) {
+    const { over, active } = event;
+    setActiveDragItem(null);
+    if (over?.id === 'benjarong-vessel-zone') {
+      const { option, themeIdx, elixirColor, icon } = active.data.current;
+      addItemToVessel(option, themeIdx, { color: elixirColor, icon });
     }
   }
 
-  // Called by ComicBurst when its exit animation completes
-  function handleBurstDone() {
-    setShowBurst(false);
+  function addItemToVessel(option, themeIdx, theme) {
+    setDroppedItems((prev) => {
+      if (prev.some((item) => item.id === option.id)) return prev;
+      return [
+        ...prev,
+        {
+          ...option,
+          themeIdx,
+          elixirColor: theme?.color || getBotanicalTheme(themeIdx).color,
+          icon: theme?.icon || getBotanicalTheme(themeIdx).icon,
+        },
+      ];
+    });
   }
 
-  // Confirm selection
-  function handleConfirm() {
-    if (confirmed || !droppedItem) return;
-    setConfirmed(true);
-    setTimeout(() => onSelect(droppedItem.id), 380);
+  function removeItemFromVessel(optionId) {
+    setDroppedItems((prev) => prev.filter((item) => item.id !== optionId));
   }
 
-  // Reset
-  function handleReset() {
-    setDroppedItem(null);
-    setShowBurst(false);
-    setConfirmed(false);
+  function toggleItem(option, themeIdx, theme) {
+    const isAlreadyIn = droppedItems.some((item) => item.id === option.id);
+    if (isAlreadyIn) {
+      removeItemFromVessel(option.id);
+    } else {
+      addItemToVessel(option, themeIdx, theme);
+    }
   }
 
-  const isAnyDragging = activeId !== null;
+  function handleConfirmAlchemy() {
+    if (droppedItems.length > 0 && onSelect) {
+      onSelect(droppedItems.map((item) => item.id));
+    }
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div
-        className="flex-1 flex flex-col items-center justify-between px-4 pt-4 pb-10 gap-5"
-        style={{ userSelect: 'none' }}
-      >
-
-        {/* ── Action instruction header ─────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.06 }}
-          className="text-center max-w-md px-2"
-        >
-          <h3 className="text-xl md:text-2xl font-['Chonburi'] text-[#ffde59] leading-snug tracking-wide">
-            {question.instruction || '⚡ ปรุงเครื่องดื่มสูตร Street Alchemist ⚡'}
-          </h3>
-          <p className="text-white/80 font-['Outfit'] text-sm mt-1">
-            ลากวัตถุดิบนีออนลงในถุงพลาสติกเพื่อผสมเครื่องดื่มสุดขั้วของคุณ!
+      <div className="flex-1 flex flex-col items-center justify-between px-3 pt-2 pb-10 gap-4 select-none w-full max-w-4xl mx-auto font-['Prompt']">
+        
+        {/* Header Title */}
+        <div className="text-center w-full px-2 z-30">
+          <div className="inline-block bg-[#0b132b]/95 border border-[#d4af37]/60 rounded-full px-5 py-1.5 shadow-md mb-2">
+            <span className="font-['Cinzel'] text-[#d4af37] text-xs sm:text-sm tracking-[0.2em] uppercase font-bold">
+              ✨ ORBITAL BOTANICAL ALCHEMY · MULTI-INFUSION ✨
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-[#f8fafc]/85 m-0 font-light max-w-lg mx-auto">
+            กดคลิก หรือ ลากวัตถุดิบลอยตัวรอบๆ โหลแก้ว (Surrounding Botanicals) ลงโถแก้วใสเบญจรงค์ตรงกลาง เพื่อปรุงสูตรลับเฉพาะคุณ
           </p>
-        </motion.div>
-
-        {/* ── Sticker cards ─────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.12 }}
-          style={{
-            display:        'flex',
-            gap:            '0.6rem',
-            justifyContent: 'center',
-            flexWrap:       'wrap',
-            padding:        '0.5rem 0',
-          }}
-        >
-          {options.map((item, idx) => {
-            const theme     = STICKER_THEMES[idx % STICKER_THEMES.length];
-            const isDropped = droppedItem?.id === item.id;
-
-            return (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, scale: 0.7, rotate: theme.rotate - 5 }}
-                animate={{
-                  opacity: confirmed && !isDropped ? 0 : 1,
-                  scale:   1,
-                  rotate:  theme.rotate,
-                }}
-                transition={{
-                  type:      'spring',
-                  stiffness: 320,
-                  damping:   22,
-                  delay:     0.1 + idx * 0.08,
-                }}
-              >
-                <IngredientSticker
-                  item={item}
-                  theme={theme}
-                  isDropped={!!droppedItem && !isDropped}
-                />
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        {/* ── Thai plastic bag drop zone ─────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.2 }}
-        >
-          <BagDropZone
-            droppedItem={droppedItem}
-            droppedTheme={droppedTheme}
-            showBurst={showBurst}
-            onBurstDone={handleBurstDone}
-            isAnyDragging={isAnyDragging}
-          />
-        </motion.div>
-
-        {/* ── Action buttons ─────────────────────────────────────────────── */}
-        <div style={{ minHeight: '56px', width: '100%', maxWidth: '320px', display: 'flex', gap: '0.65rem' }}>
-          <AnimatePresence>
-            {droppedItem && !confirmed && (
-              <>
-                {/* Reset */}
-                <motion.button
-                  key="reset"
-                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                  onClick={handleReset}
-                  style={{
-                    flex:          '0 0 auto',
-                    padding:       '0.85rem 1rem',
-                    border:        '3px solid rgba(255,255,255,0.18)',
-                    borderRadius:  '10px',
-                    background:    'rgba(255,255,255,0.05)',
-                    color:         'rgba(255,255,255,0.45)',
-                    fontFamily:    '"Bangers", Impact, cursive',
-                    fontSize:      '1rem',
-                    cursor:        'pointer',
-                    letterSpacing: '0.05em',
-                    backdropFilter: 'blur(10px)',
-                  }}
-                >
-                  ↩
-                </motion.button>
-
-                {/* Confirm */}
-                <motion.button
-                  key="confirm"
-                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 22, delay: 0.06 }}
-                  whileHover={{ scale: 1.04, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleConfirm}
-                  style={{
-                    flex:          1,
-                    padding:       '0.85rem 1rem',
-                    border:        `3px solid white`,
-                    borderRadius:  '10px',
-                    background:    droppedTheme?.bg ?? 'rgba(255,255,255,0.1)',
-                    boxShadow:     `0 0 0 2px #1a1a1a, 4px 4px 0 #1a1a1a, 0 0 20px ${droppedTheme?.glow ?? 'transparent'}`,
-                    color:         '#ffffff',
-                    fontFamily:    '"Bangers", Impact, cursive',
-                    fontSize:      '1.05rem',
-                    letterSpacing: '0.1em',
-                    cursor:        'pointer',
-                    textShadow:    '1px 1px 0 rgba(0,0,0,0.5)',
-                    transition:    'box-shadow 0.2s',
-                  }}
-                >
-                  {droppedTheme?.emoji} POUR IT IN!
-                </motion.button>
-              </>
-            )}
-
-            {confirmed && (
-              <motion.div
-                key="done"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{
-                  flex:           1,
-                  display:        'flex',
-                  alignItems:     'center',
-                  justifyContent: 'center',
-                  fontFamily:     '"Bangers", Impact, cursive',
-                  fontSize:       '1.1rem',
-                  letterSpacing:  '0.1em',
-                  color:          droppedTheme?.liquid ?? 'white',
-                  textShadow:     `0 0 12px ${droppedTheme?.glow ?? 'white'}`,
-                }}
-              >
-                ✓ MIXED! Moving on…
-              </motion.div>
-            )}
-
-            {!droppedItem && !confirmed && (
-              <motion.p
-                key="empty-hint"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  flex:      1,
-                  textAlign: 'center',
-                  alignSelf: 'center',
-                  fontFamily: '"Bangers", Impact, cursive',
-                  fontSize:  '0.85rem',
-                  letterSpacing: '0.1em',
-                  color:     'rgba(255,255,255,0.2)',
-                }}
-              >
-                {isAnyDragging ? 'AIM FOR THE BAG...' : 'PICK AN INGREDIENT ABOVE'}
-              </motion.p>
-            )}
-          </AnimatePresence>
         </div>
 
-      </div>
-
-      {/* ── DragOverlay — floating sticker that follows cursor ───────────── */}
-      <DragOverlay dropAnimation={null}>
-        {activeOption && activeTheme ? (
-          <IngredientSticker
-            item={activeOption}
-            theme={activeTheme}
-            isDropped={false}
-            isActiveOverlay
+        {/* ── Orbital Floating Arena (Vessel Center + Surrounding Botanicals) ── */}
+        <div className="relative w-full h-[470px] sm:h-[510px] flex items-center justify-center my-1 max-w-3xl">
+          
+          {/* Central Crystal Decanter (`โหลแก้วตรงกลาง`) */}
+          <DroppableVesselZone
+            isOver={!!activeDragItem}
+            droppedItems={droppedItems}
+            onRemoveItem={removeItemFromVessel}
+            onClearAll={() => setDroppedItems([])}
           />
-        ) : null}
-      </DragOverlay>
+
+          {/* Surrounding Orbital Floating Borderless Ingredients (`ลอยรอบๆ โหลแก้ว`) */}
+          {options.map((opt, idx) => {
+            const isDropped = droppedItems.some((item) => item.id === opt.id);
+            return (
+              <OrbitalFloatingItem
+                key={opt.id}
+                option={opt}
+                themeIdx={idx}
+                isDropped={isDropped}
+                onToggle={toggleItem}
+                total={options.length}
+              />
+            );
+          })}
+        </div>
+
+        {/* Confirm Alchemy Action Button */}
+        <AnimatePresence>
+          {droppedItems.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-md mt-2 z-30"
+            >
+              <button
+                onClick={handleConfirmAlchemy}
+                className="w-full bg-gradient-to-r from-[#047857] via-[#043927] to-[#d4af37] border-2 border-[#fef08a] text-white font-['Cinzel'] font-bold py-4 px-6 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.4)] tracking-[0.2em] uppercase transition-all hover:brightness-110 flex items-center justify-center gap-3 text-sm sm:text-base cursor-pointer"
+              >
+                <span>⚱️ CONFIRM ALCHEMY ({droppedItems.length} INGREDIENTS)</span>
+                <span>✨</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </DndContext>
   );
 }

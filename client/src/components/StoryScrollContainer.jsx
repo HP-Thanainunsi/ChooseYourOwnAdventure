@@ -1,20 +1,19 @@
 /**
  * StoryScrollContainer.jsx — Scrollytelling 3D Parallax Game Flow
  * ─────────────────────────────────────────────────────────────────────────────
- * Dynamically renders GameStages fetched from /api/game-flow.
+ * Dynamically renders GameStages fetched from /api/game-flow in our luxury
+ * "Garden of Siam — 5-Star Hotel Bar" aesthetic.
  *
  * Requirements Met:
- *   1. Full-viewport section (100vh): Each stage renders vertically with ample spacing.
- *   2. Thai-Comic Typography: Displays story_text using 'Chonburi' font at the top
- *      of each section in a dynamic 3D pop-art banner.
+ *   1. Full-viewport section (100vh): Each chamber renders vertically with luxury spacing.
+ *   2. Luxury Serif Typography: Displays story_text using 'Playfair Display' font inside
+ *      frosted glass panels with golden trim.
  *   3. Dynamic Mini-Game Component: Reads game_type ('swipe', 'mixology', 'tarot')
- *      and renders exact matching component (<SwipeGame />, <MixologyGame />, <TarotGame />)
- *      passing specific options to it.
- *   4. Strict Scrolling Logic: 1 Story Section = 1 Game Action. Only stages up to
- *      unlockedIndex + 1 are rendered/accessible, ensuring the user cannot scroll
- *      to Stage 2 until Stage 1 is completed.
+ *      and renders exact matching component (<SwipeGame />, <MixologyGame />, <TarotGame />).
+ *   4. Strict Scrolling Logic: 1 Chamber = 1 Action. Only stages up to
+ *      unlockedIndex + 1 are rendered/accessible.
  *   5. 3D Parallax Effects: Background layer (`translateZ(-250px)`) displays custom
- *      background_image_url with smooth parallax on scroll alongside foreground effects.
+ *      background_image_url with smooth parallax alongside ambient luxury floating lights.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -33,63 +32,57 @@ const COMPONENT_MAP = {
   tarot:     TarotGame,
 };
 
-const COMIC_FONT = '"Bangers", Impact, "Arial Black", cursive';
-
-// ─── Classic Comic Speech Bubble Component ─────────────────────────────────────
-function SpeechBubble({ text }) {
+// ─── Luxury Glass Message Panel Component ─────────────────────────────────────
+function LuxuryMessageCard({ text }) {
   if (!text) return null;
   return (
-    <div className="relative text-center px-4 z-10 mb-6 w-full flex justify-center">
-      <div className="inline-block bg-white border-4 border-[#1a1a1a] rounded-[22px] px-6 py-4 relative max-w-[90%] shadow-[6px_6px_0_#1a1a1a]">
-        <p className="font-['Chonburi'] text-lg sm:text-2xl md:text-3xl text-[#1a1a1a] leading-relaxed m-0">
+    <div className="relative text-center px-4 z-10 mb-8 w-full flex justify-center">
+      <div className="inline-block bg-[#043927]/65 border border-[#d4af37]/50 rounded-3xl px-8 py-6 relative max-w-[92%] shadow-[0_20px_50px_rgba(0,0,0,0.7),0_0_30px_rgba(212,175,55,0.15)] backdrop-blur-2xl">
+        {/* Subtle gold corner accents */}
+        <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#d4af37]/70" />
+        <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-[#d4af37]/70" />
+        <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-[#d4af37]/70" />
+        <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[#d4af37]/70" />
+
+        <p className="font-['Playfair_Display'] italic text-lg sm:text-2xl md:text-3xl text-[#f8fafc] leading-relaxed m-0 tracking-wide font-light">
           {text}
         </p>
 
-        {/* Tail — outer black triangle */}
-        <div
-          className="absolute -bottom-[22px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[22px] border-t-[#1a1a1a]"
-        />
-        {/* Tail — inner white triangle */}
-        <div
-          className="absolute -bottom-[14px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[16px] border-t-white"
-        />
+        {/* Elegant Gold Dividing Line underneath */}
+        <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mx-auto mt-4 opacity-70" />
       </div>
     </div>
   );
 }
 
-// ─── Comic Pop-Art Screen Wipe Overlay Component ──────────────────────────────
-function ScreenWipeOverlay({ isWiping, text }) {
+// ─── Luxury Velvet & Gold Screen Wipe Transition Overlay ──────────────────────
+function LuxuryTransitionOverlay({ isWiping, text }) {
   return (
     <AnimatePresence>
       {isWiping && (
         <motion.div
           key="wipe-overlay"
-          initial={{ y: '-100%', opacity: 0 }}
-          animate={{ y: '0%', opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-auto overflow-hidden bg-[#ffde59] border-y-8 border-[#1a1a1a] shadow-[0_0_50px_rgba(255,222,89,0.8)]"
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-auto overflow-hidden bg-[#021e14]/95 border-y border-[#d4af37]/60 shadow-[0_0_100px_rgba(212,175,55,0.4)] backdrop-blur-3xl"
         >
-          {/* Halftone pop-art background pattern inside wipe */}
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle at center, #1a1a1a 2px, transparent 2.5px)',
-              backgroundSize: '12px 12px',
-            }}
-          />
+          {/* Ambient golden dust in transition */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15)_0%,transparent_70%)] pointer-events-none" />
 
-          {/* Dynamic Comic Text */}
+          {/* Dynamic Gold Text Box */}
           <motion.div
-            initial={{ scale: 0.8, rotate: -3 }}
-            animate={{ scale: [1, 1.05, 1], rotate: [-3, 2, -1] }}
-            transition={{ repeat: Infinity, duration: 0.4 }}
-            className="relative z-10 px-8 py-6 bg-white border-4 border-[#1a1a1a] rounded-3xl shadow-[8px_8px_0_#1a1a1a] max-w-lg text-center mx-4"
+            initial={{ y: 15, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="relative z-10 px-10 py-8 bg-[#043927]/80 border border-[#d4af37]/70 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.25)] max-w-lg text-center mx-4 backdrop-blur-2xl"
           >
-            <p className="font-['Bangers'] text-2xl sm:text-3xl md:text-4xl text-[#1a1a1a] tracking-wider m-0 uppercase leading-snug">
-              {text || '💥 CHAPTER UNLOCKED! 💥'}
+            <div className="text-3xl mb-3">✨ 🪷 ✨</div>
+            <p className="font-['Cinzel'] text-xl sm:text-2xl md:text-3xl text-[#d4af37] tracking-[0.15em] m-0 uppercase leading-relaxed font-semibold">
+              {text || 'SANCTUARY GATE UNLOCKED'}
             </p>
+            <div className="w-16 h-0.5 bg-[#d4af37]/60 mx-auto mt-4" />
           </motion.div>
         </motion.div>
       )}
@@ -97,47 +90,37 @@ function ScreenWipeOverlay({ isWiping, text }) {
   );
 }
 
-// ─── Comic & Thai Foreground / Background Assets per Section ──────────────────
-const SECTION_THEMES = [
+// ─── Luxury Chamber Themes per Section ────────────────────────────────────────
+const LUXURY_CHAMBERS = [
   {
-    bgGrad:     'linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%)',
-    bgAccent:   '#00f5ff',
-    issueTitle: 'ISSUE #01 • THE MORNING AWAKENING',
-    soundLeft:  '💥 VROOM!',
-    soundRight: '⚡ ZAP!',
-    thaiIcon1:  '🛺',
-    thaiIcon2:  '🌶️',
+    bgGrad:     'linear-gradient(135deg, #021e14 0%, #043927 100%)',
+    bgAccent:   '#d4af37',
+    issueTitle: 'CHAMBER I • THE CONCIERGE SANCTUARY',
+    soundLeft:  '🌿 Jasmine Breeze',
+    soundRight: '✨ Golden Dew',
+    thaiIcon1:  '🪷',
+    thaiIcon2:  '🍸',
   },
   {
-    bgGrad:     'linear-gradient(135deg, #2b0c1e 0%, #4a0e35 100%)',
-    bgAccent:   '#ff2a85',
-    issueTitle: 'ISSUE #02 • MIXING THE SPIRIT',
-    soundLeft:  '💥 SPLASH!',
-    soundRight: 'POP!',
-    thaiIcon1:  '🐘',
+    bgGrad:     'linear-gradient(135deg, #1c130d 0%, #2c1810 100%)',
+    bgAccent:   '#f59e0b',
+    issueTitle: 'CHAMBER II • BENJARONG ALCHEMY LAB',
+    soundLeft:  '🥃 Smoked Teakwood',
+    soundRight: '🍯 Royal Honey',
+    thaiIcon1:  '⚱️',
     thaiIcon2:  '🌿',
   },
   {
-    bgGrad:     'linear-gradient(135deg, #1b1b00 0%, #302600 100%)',
-    bgAccent:   '#ffde59',
-    issueTitle: 'ISSUE #03 • THE DESTINY TAROT',
-    soundLeft:  '⚡ KA-POW!',
-    soundRight: '✨ SHAZAM!',
-    thaiIcon1:  '🏯',
-    thaiIcon2:  '🃏',
-  },
-  {
-    bgGrad:     'linear-gradient(135deg, #0a251c 0%, #163829 100%)',
-    bgAccent:   '#00ff88',
-    issueTitle: 'ISSUE #04 • BANGKOK NIGHTS',
-    soundLeft:  '🔥 BOOM!',
-    soundRight: '🍸 CHEERS!',
-    thaiIcon1:  '🛶',
-    thaiIcon2:  '🎇',
+    bgGrad:     'linear-gradient(135deg, #0b132b 0%, #1c2541 100%)',
+    bgAccent:   '#d4af37',
+    issueTitle: 'CHAMBER III • THE BRASS KEY VAULT',
+    soundLeft:  '🗝️ Secret Gate',
+    soundRight: '✨ Emerald Glow',
+    thaiIcon1:  '🗝️',
+    thaiIcon2:  '🪷',
   },
 ];
 
-// Default stage backgrounds fallback to ensure every stage has a rich comic background
 const DEFAULT_STAGE_BGS = [
   '/images/stages/morning-bangkok.png',
   '/images/stages/sukhumvit-bts.png',
@@ -172,18 +155,15 @@ function ScrollySection({
   // ── 1. Background Layer (Slowest) `translateZ(-250px)` ─────────────────────
   const bgY = useTransform(scrollYProgress, [0, 1], [-140, 140]);
 
-  // ── 1.5. Middle Parallax Layer (Tangled Power Lines & Street Signs) `translateZ(-140px)` ──
-  const midY  = useTransform(scrollYProgress, [0, 1], [-90, 90]);
-  const wireY = useTransform(scrollYProgress, [0, 1], [50, -50]);
+  // ── 1.5. Middle Parallax Layer (`translateZ(-140px)`) ──
+  const midY  = useTransform(scrollYProgress, [0, 1], [-70, 70]);
+  const wireY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
   // ── 3. Foreground Layer (Fastest) `translateZ(180px)` ──────────────────────
-  // Tighter vertical range + boundary opacity fade prevents 2 sets of icons overlapping between sections
   const fgY        = useTransform(scrollYProgress, [0, 1], [100, -100]);
   const fgOpacity  = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
-  const fgRotate   = useTransform(scrollYProgress, [0, 1], [-18, 18]);
-  const fgOpposite = useTransform(scrollYProgress, [0, 1], [18, -18]);
 
-  const theme      = SECTION_THEMES[index % SECTION_THEMES.length];
+  const theme      = LUXURY_CHAMBERS[index % LUXURY_CHAMBERS.length];
   const gameType   = question?.game_type || question?.type || 'swipe';
   const QuestionComponent = COMPONENT_MAP[gameType] ?? SwipeGame;
 
@@ -199,7 +179,7 @@ function ScrollySection({
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen w-full flex flex-col items-center justify-center py-[10vh] my-[15vh] px-4 overflow-visible"
+      className="relative min-h-screen w-full flex flex-col items-center justify-center py-[10vh] my-[12vh] px-4 overflow-visible"
       style={{
         transformStyle: 'preserve-3d',
       }}
@@ -211,48 +191,42 @@ function ScrollySection({
           transform: 'translateZ(-250px) scale(1.28)',
           background: theme.bgGrad,
         }}
-        className="absolute inset-0 rounded-3xl border-4 border-[#1a1a1a] shadow-[12px_12px_0_#1a1a1a] overflow-hidden pointer-events-none flex flex-col justify-between p-8"
+        className="absolute inset-0 rounded-3xl border border-[#d4af37]/35 shadow-[0_30px_80px_rgba(0,0,0,0.8)] overflow-hidden pointer-events-none flex flex-col justify-between p-8"
       >
         {/* Custom or Fallback Background Image (`bgUrl`) */}
         {bgUrl && (
           <div className="absolute inset-0 z-0">
             <img
               src={bgUrl}
-              alt="Stage background"
-              className="w-full h-full object-cover opacity-60 mix-blend-overlay"
+              alt="Chamber background"
+              className="w-full h-full object-cover opacity-35 mix-blend-luminosity filter contrast-125"
             />
           </div>
         )}
 
-        {/* Halftone Comic Pattern Texture */}
-        <div
-          className="absolute inset-0 opacity-25 z-1"
-          style={{
-            backgroundImage: `radial-gradient(circle, ${theme.bgAccent} 2px, transparent 2px)`,
-            backgroundSize: '14px 14px',
-          }}
-        />
+        {/* Golden Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#041410] via-transparent to-[#041410]/80 z-1" />
 
-        {/* Big Watermark Issue Number */}
-        <div className="absolute -bottom-10 -right-10 font-['Bangers'] text-8xl md:text-9xl text-white/10 select-none tracking-widest z-2">
-          #{stepNumber}
+        {/* Big Watermark Chamber Number */}
+        <div className="absolute -bottom-6 -right-6 font-['Cinzel'] text-8xl md:text-9xl text-[#d4af37]/10 select-none tracking-widest z-2 font-bold">
+          {stepNumber}
         </div>
 
-        {/* Comic Banner Top */}
-        <div className="relative z-10 flex items-center justify-between border-b-2 border-white/20 pb-3">
+        {/* Chamber Header */}
+        <div className="relative z-10 flex items-center justify-between border-b border-[#d4af37]/30 pb-4">
           <span
-            className="font-['Bangers'] text-lg md:text-xl tracking-wider uppercase px-3 py-1 border-2 border-[#1a1a1a]"
-            style={{ backgroundColor: theme.bgAccent, color: '#1a1a1a' }}
+            className="font-['Cinzel'] text-sm md:text-base tracking-[0.2em] font-semibold uppercase px-4 py-1.5 rounded-full border border-[#d4af37]/50 shadow-sm"
+            style={{ backgroundColor: 'rgba(4, 57, 39, 0.7)', color: theme.bgAccent }}
           >
             {theme.issueTitle}
           </span>
-          <span className="font-['Outfit'] text-xs text-white/60 font-semibold uppercase tracking-widest">
-            SCROLLYTELLING STAGE {stepNumber} OF {total}
+          <span className="font-['Cinzel'] text-xs text-[#f8fafc]/60 uppercase tracking-widest">
+            CHAMBER {stepNumber} OF {total}
           </span>
         </div>
       </motion.div>
 
-      {/* ─── LAYER 1.5: MIDDLE CONTINUOUS PARALLAX (TANGLED POWER LINES & STREET FOOD SIGNS) ─── */}
+      {/* ─── LAYER 1.5: MIDDLE CONTINUOUS LUXURY ATMOSPHERE BAR ─── */}
       <motion.div
         style={{
           y: wireY,
@@ -260,24 +234,24 @@ function ScrollySection({
         }}
         className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex flex-col justify-between py-10"
       >
-        {/* Tangled Thai Power Lines Banner */}
-        <div className="w-full opacity-60 border-t-[4px] border-b-[3px] border-[#1a1a1a] h-12 relative flex items-center justify-around -rotate-1 bg-gradient-to-r from-[#1a1a1a]/80 via-[#ff007f]/40 to-[#1a1a1a]/80 shadow-[0_4px_15px_rgba(0,0,0,0.5)]">
-          <span className="text-2xl animate-pulse">⚡</span>
-          <span className="text-xs md:text-sm font-['Bangers'] text-[#ffde59] tracking-widest">
-            ⚡ BANGKOK TANGLED POWER LINES • SIAMESE VOLTAGE #108 ⚡
+        {/* Luxury Sanctuary Ribbon */}
+        <div className="w-full opacity-80 border-y border-[#d4af37]/40 h-12 relative flex items-center justify-around bg-gradient-to-r from-[#041410] via-[#043927]/80 to-[#041410] shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-md">
+          <span className="text-lg text-[#d4af37] animate-pulse">✨</span>
+          <span className="text-xs md:text-sm font-['Cinzel'] text-[#d4af37] tracking-[0.25em] uppercase">
+            GARDEN OF SIAM SANCTUARY • EXCLUSIVE 5-STAR MIXOLOGY EXPERIENCE
           </span>
-          <span className="text-2xl animate-pulse">⚡</span>
+          <span className="text-lg text-[#d4af37] animate-pulse">✨</span>
         </div>
 
-        {/* Floating Street Food & Neon Tuk-Tuk Signs */}
-        <motion.div style={{ y: midY }} className="flex justify-between w-full px-4 sm:px-8 opacity-90">
-          <div className="bg-[#ff007f] border-3 border-white px-3.5 py-1 rounded-xl shadow-[0_0_20px_#ff007f,4px_4px_0_#1a1a1a] text-white font-['Chonburi'] text-xs sm:text-sm -rotate-6 flex items-center gap-1.5">
-            <span>🍢</span>
-            <span>หมาล่าเยาวราช</span>
+        {/* Floating Concierge & Signature Badges */}
+        <motion.div style={{ y: midY }} className="flex justify-between w-full px-4 sm:px-10 opacity-85">
+          <div className="bg-[#043927]/85 border border-[#d4af37]/50 px-4 py-1.5 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.6)] text-[#f8fafc] font-['Prompt'] text-xs sm:text-sm flex items-center gap-2 backdrop-blur-md">
+            <span className="text-[#d4af37]">🛎️</span>
+            <span>บริการส่วนตัวระดับ 5 ดาว</span>
           </div>
-          <div className="bg-[#00f0ff] border-3 border-[#1a1a1a] px-3.5 py-1 rounded-xl shadow-[0_0_20px_#00f0ff,4px_4px_0_#1a1a1a] text-[#1a1a1a] font-['Chonburi'] text-xs sm:text-sm rotate-6 flex items-center gap-1.5">
-            <span>🧋</span>
-            <span>ชาไทยนมสดสะท้านเมือง</span>
+          <div className="bg-[#1c130d]/85 border border-[#d4af37]/50 px-4 py-1.5 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.6)] text-[#f8fafc] font-['Prompt'] text-xs sm:text-sm flex items-center gap-2 backdrop-blur-md">
+            <span className="text-[#d4af37]">🍸</span>
+            <span>เครื่องดื่มรังสรรค์พิเศษโดยมาสเตอร์บาร์เทนเดอร์</span>
           </div>
         </motion.div>
       </motion.div>
@@ -291,17 +265,19 @@ function ScrollySection({
       >
         {/* Completion status badge */}
         {isCompleted && (
-          <div className="self-end mb-2 z-30 bg-[#ffde59] text-[#1a1a1a] font-['Bangers'] text-sm tracking-widest px-4 py-1 border-2 border-[#1a1a1a] shadow-[3px_3px_0_#1a1a1a] rotate-2">
-            ★ STAGE #{stepNumber} COMPLETED! ★
+          <div className="self-end mb-3 z-30 bg-[#d4af37] text-[#041410] font-['Cinzel'] font-bold text-xs md:text-sm tracking-[0.2em] px-5 py-1.5 rounded-full border border-[#fef08a] shadow-[0_4px_15px_rgba(212,175,55,0.4)]">
+            ★ CHAMBER {stepNumber} RESOLVED ★
           </div>
         )}
 
-        {/* Story Text in Comic Speech Bubble ('Chonburi' font) */}
+        {/* Story Text in Luxury Glass Panel */}
         <div className="mb-6 text-center w-full px-2 flex flex-col items-center">
-          <div className="inline-block bg-[#ffde59] text-[#1a1a1a] font-['Bangers'] text-sm md:text-base tracking-widest px-4 py-1 border-3 border-[#1a1a1a] shadow-[3px_3px_0_#1a1a1a] uppercase -rotate-1 mb-4">
-            ⚡ STAGE #{stepNumber} • {gameType.toUpperCase()} ACTION ⚡
+          <div className="inline-block bg-[#0b132b]/90 border border-[#d4af37]/60 rounded-full px-5 py-1.5 shadow-[0_4px_15px_rgba(0,0,0,0.5)] mb-5">
+            <span className="font-['Cinzel'] text-[#d4af37] text-xs md:text-sm tracking-[0.25em] uppercase font-medium">
+              ✨ CHAMBER {stepNumber} • {gameType.toUpperCase()} ACTION ✨
+            </span>
           </div>
-          <SpeechBubble text={storyText} />
+          <LuxuryMessageCard text={storyText} />
         </div>
 
         {/* Exact Matching Mini-Game Component */}
@@ -317,8 +293,8 @@ function ScrollySection({
       {/* ─── LOCKED OVERLAY IF NOT UNLOCKED YET ─────────────────────────────── */}
       {!isUnlocked && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none px-4 text-center">
-          <div className="bg-[#ff1616] text-white font-['Bangers'] text-xl md:text-2xl tracking-widest px-8 py-4 border-4 border-[#1a1a1a] shadow-[6px_6px_0_#1a1a1a] -rotate-2 uppercase animate-pulse">
-            🔒 COMPLETE STAGE #{index} ABOVE TO UNLOCK THIS ACTION!
+          <div className="bg-[#0b132b]/90 text-[#fef08a] font-['Cinzel'] text-lg md:text-xl tracking-[0.15em] px-8 py-5 rounded-3xl border border-[#d4af37]/70 shadow-[0_20px_50px_rgba(0,0,0,0.9)] uppercase font-medium backdrop-blur-xl">
+            🔒 COMPLETE CHAMBER {index} ABOVE TO UNLOCK THIS GATE
           </div>
         </div>
       )}
@@ -332,29 +308,21 @@ function ScrollySection({
         }}
         className="absolute inset-0 pointer-events-none flex justify-between items-center px-4 md:px-12 z-40 overflow-visible"
       >
-        {/* Left Floating Sound & Tuk-Tuk Silhouette Sticker */}
-        <motion.div
-          style={{ rotate: fgRotate }}
-          className="hidden md:flex flex-col items-center justify-center bg-[#ff1616] text-white font-['Bangers'] text-2xl px-4 py-2 border-3 border-white shadow-[4px_4px_0_#1a1a1a] rounded-xl -translate-x-6"
-        >
-          <span>{theme.soundLeft}</span>
-          <div className="flex items-center gap-1 mt-1 text-3xl">
+        {/* Left Floating Whisper Badge */}
+        <div className="hidden md:flex flex-col items-center justify-center bg-[#043927]/90 text-[#f8fafc] font-['Cinzel'] text-sm px-4 py-2.5 border border-[#d4af37]/60 shadow-[0_10px_25px_rgba(0,0,0,0.7)] rounded-2xl -translate-x-4 backdrop-blur-md">
+          <span className="text-[#d4af37] font-semibold">{theme.soundLeft}</span>
+          <div className="flex items-center gap-1.5 mt-1 text-2xl">
             <span>{theme.thaiIcon1}</span>
-            <span>🛺</span>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Right Floating Sound & Win Moto Silhouette Sticker */}
-        <motion.div
-          style={{ rotate: fgOpposite }}
-          className="hidden md:flex flex-col items-center justify-center bg-[#ffde59] text-[#1a1a1a] font-['Bangers'] text-2xl px-4 py-2 border-3 border-white shadow-[4px_4px_0_#1a1a1a] rounded-xl translate-x-6"
-        >
-          <span>{theme.soundRight}</span>
-          <div className="flex items-center gap-1 mt-1 text-3xl">
+        {/* Right Floating Whisper Badge */}
+        <div className="hidden md:flex flex-col items-center justify-center bg-[#1c130d]/90 text-[#f8fafc] font-['Cinzel'] text-sm px-4 py-2.5 border border-[#d4af37]/60 shadow-[0_10px_25px_rgba(0,0,0,0.7)] rounded-2xl translate-x-4 backdrop-blur-md">
+          <span className="text-[#d4af37] font-semibold">{theme.soundRight}</span>
+          <div className="flex items-center gap-1.5 mt-1 text-2xl">
             <span>{theme.thaiIcon2}</span>
-            <span>🛵</span>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
     </section>
   );
@@ -367,14 +335,12 @@ export default function StoryScrollContainer({
   onSelectOption,
   onCompleteAll,
 }) {
-  // Track which section index is currently unlocked (`0` initially)
   const [unlockedIndex, setUnlockedIndex] = useState(0);
   const [selectionsMap, setSelectionsMap] = useState({});
   const [isWiping, setIsWiping]           = useState(false);
   const [wipeText, setWipeText]           = useState('');
   const sectionRefs                       = useRef({});
 
-  // Sort stages/questions strictly by step_order ASC
   const sortedStages = [...questions].sort((a, b) => {
     const orderA = Number(a.step_order) || 0;
     const orderB = Number(b.step_order) || 0;
@@ -385,7 +351,6 @@ export default function StoryScrollContainer({
     sectionRefs.current[index] = domNode;
   };
 
-  // Sync initial selections if passed in
   useEffect(() => {
     if (Array.isArray(userSelections) && userSelections.length > 0) {
       const map = {};
@@ -399,33 +364,28 @@ export default function StoryScrollContainer({
     }
   }, [userSelections, sortedStages.length]);
 
-  // Handle option selection in stage index with Comic Screen Wipe!
   const handleSectionSelect = (index, optionId) => {
     const isLastQuestion = index === sortedStages.length - 1;
     setWipeText(
       isLastQuestion
-        ? '⚡ ALCHEMY IN PROGRESS... REVEALING SPIRIT DRINK! ⚡'
-        : '💥 POW! STAGE CLEAR! UNLOCKING NEXT CHAPTER... 💥'
+        ? '✨ ALCHEMY COMPLETE • PRESENTING YOUR SIGNATURE DRINK ✨'
+        : '🌿 CHAMBER RESOLVED • OPENING NEXT SANCTUARY GATE 🌿'
     );
     setIsWiping(true);
 
-    // Trigger state transitions & scrolling mid-wipe
     setTimeout(() => {
       const updatedMap = { ...selectionsMap, [index]: optionId };
       setSelectionsMap(updatedMap);
 
-      // Build ordered selections array up to current filled questions
       const updatedArray = Object.keys(updatedMap)
         .sort((a, b) => Number(a) - Number(b))
         .map((k) => updatedMap[k]);
 
-      // Inform parent of choice
       if (onSelectOption) {
         onSelectOption(index, optionId);
       }
 
       if (!isLastQuestion) {
-        // Unlock next stage (1 Story Section = 1 Game Action)
         const nextIndex = Math.max(unlockedIndex, index + 1);
         setUnlockedIndex(nextIndex);
 
@@ -435,9 +395,8 @@ export default function StoryScrollContainer({
           if (nextNode) {
             nextNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
-        }, 450);
+        }, 480);
       } else {
-        // Final question answered → Auto-scroll to bottom and complete
         setTimeout(() => {
           setIsWiping(false);
           window.scrollTo({
@@ -445,44 +404,40 @@ export default function StoryScrollContainer({
             behavior: 'smooth',
           });
 
-          // Trigger onCompleteAll with full selections array
           setTimeout(() => {
             if (onCompleteAll) {
               onCompleteAll(updatedArray);
             }
           }, 600);
-        }, 450);
+        }, 480);
       }
-    }, 400);
+    }, 450);
   };
 
   const allCompleted =
     Object.keys(selectionsMap).length === sortedStages.length && sortedStages.length > 0;
 
-  // Strict scrolling logic: 1 Story Section = 1 Game Action.
-  // We only render sections up to `unlockedIndex + 1` (where `unlockedIndex + 1` is displayed as locked).
-  // The user physically cannot scroll down to Stage 2 until Stage 1 action is completed!
   const renderedStages = sortedStages.slice(0, unlockedIndex + 2);
 
   return (
     <div
-      className="relative w-full overflow-x-hidden flex flex-col items-center"
+      className="relative w-full overflow-x-hidden flex flex-col items-center bg-[#041410]"
       style={{
         perspective: '1200px',
         transformStyle: 'preserve-3d',
       }}
     >
-      <ScreenWipeOverlay isWiping={isWiping} text={wipeText} />
+      <LuxuryTransitionOverlay isWiping={isWiping} text={wipeText} />
 
-      {/* Top Banner Guide */}
-      <div className="sticky top-4 z-50 bg-[#1a1a1a] border-3 border-white px-5 py-2 shadow-[4px_4px_0_#ffde59] rounded-full flex items-center gap-3">
-        <span className="text-xl">📜</span>
-        <span className="font-['Bangers'] text-white tracking-widest text-sm md:text-base uppercase">
-          1 STORY = 1 ACTION • COMPLETE STAGE TO UNLOCK NEXT CHAPTER
+      {/* Top Sanctuary Guide Banner */}
+      <div className="sticky top-5 z-50 bg-[#0b132b]/90 border border-[#d4af37]/60 px-6 py-2.5 shadow-[0_10px_25px_rgba(0,0,0,0.8)] rounded-full flex items-center gap-3 backdrop-blur-xl">
+        <span className="text-lg">🌿</span>
+        <span className="font-['Cinzel'] text-[#d4af37] tracking-[0.15em] text-xs md:text-sm uppercase font-semibold">
+          1 CHAMBER = 1 SELECTION • RESOLVE TO UNLOCK NEXT VAULT
         </span>
       </div>
 
-      {/* Render stages vertically with 100vh full-viewport layout using AnimatePresence */}
+      {/* Render stages vertically */}
       <div className="w-full flex flex-col items-center">
         <AnimatePresence mode="wait">
           {renderedStages.map((stage, index) => {
@@ -492,10 +447,10 @@ export default function StoryScrollContainer({
             return (
               <motion.div
                 key={stage.id ?? index}
-                initial={{ opacity: 0, scale: 0.94, y: 30 }}
+                initial={{ opacity: 0, scale: 0.95, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.94, y: -30 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 25 }}
+                exit={{ opacity: 0, scale: 0.95, y: -30 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 26 }}
                 className="w-full flex flex-col items-center"
               >
                 <ScrollySection
@@ -513,25 +468,25 @@ export default function StoryScrollContainer({
         </AnimatePresence>
       </div>
 
-      {/* Bottom Completion Splash before transitioning to result */}
+      {/* Bottom Completion Banner before transitioning to result */}
       <AnimatePresence>
         {allCompleted && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            initial={{ opacity: 0, scale: 0.85, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="w-full max-w-xl my-24 bg-gradient-to-r from-[#ff1616] via-[#ff2a85] to-[#ff9100] border-4 border-white p-8 rounded-3xl shadow-[0_0_0_4px_#1a1a1a,10px_10px_0_#1a1a1a] text-center text-white"
+            className="w-full max-w-xl my-24 bg-gradient-to-r from-[#043927] via-[#1c130d] to-[#043927] border border-[#d4af37]/70 p-10 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(212,175,55,0.25)] text-center text-white backdrop-blur-2xl"
           >
-            <div className="text-6xl mb-3 animate-bounce">⚡🚀</div>
+            <div className="text-6xl mb-4 animate-bounce">🥂✨</div>
             <h3
-              className="text-4xl md:text-5xl font-['Chonburi'] uppercase tracking-wide"
+              className="text-3xl md:text-4xl font-['Cinzel'] uppercase tracking-[0.15em] font-bold text-[#d4af37]"
               style={{
-                textShadow: '3px 3px 0 #1a1a1a, 6px 6px 0 #ffd700',
+                textShadow: '0 2px 10px rgba(0,0,0,0.8)',
               }}
             >
-              JOURNEY COMPLETE!
+              SANCTUARY JOURNEY RESOLVED
             </h3>
-            <p className="font-['Bangers'] text-xl tracking-widest text-[#ffde59] mt-2">
-              SUMMONING YOUR DESTINED BANGKOK BAR & SPIRIT DRINK...
+            <p className="font-['Playfair_Display'] italic text-lg text-[#f8fafc]/90 mt-3 font-light">
+              Crafting your bespoke 5-star signature cocktail...
             </p>
           </motion.div>
         )}

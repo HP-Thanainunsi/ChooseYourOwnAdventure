@@ -118,21 +118,21 @@ async function seedData(db, forceReset = false) {
     await db.run(
       `INSERT INTO Locations (id, name, address, latitude, longitude, google_maps_link)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [1, 'Teens of Thailand', '76 Soi Nana, Charoen Krung Rd, Pom Prap, Bangkok 10100', 13.7388, 100.5144, 'https://maps.app.goo.gl/TeensOfThailandBangkok']
+      [1, 'Garden of Siam — The Grand Teak Lounge', '48 Oriental Avenue, Bang Rak, Bangkok 10500', 13.7240, 100.5140, 'https://maps.app.goo.gl/MandarinOrientalBangkok']
     );
 
     await db.run(
       `INSERT INTO Locations (id, name, address, latitude, longitude, google_maps_link)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [2, 'Tropic City', '672/65 Soi Charoen Krung 28, Bang Rak, Bangkok 10500', 13.7287, 100.5165, 'https://maps.app.goo.gl/TropicCityBangkok']
+      [2, 'The Sanctuary Speakeasy at Garden of Siam', 'Soi Nai Lert, Wireless Road, Pathum Wan, Bangkok 10330', 13.7432, 100.5475, 'https://maps.app.goo.gl/SanctuarySpeakeasyBangkok']
     );
 
     await db.run(
       `INSERT INTO Locations (id, name, address, latitude, longitude, google_maps_link)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [3, 'Nana Cyber Speakeasy', 'Soi Nana (Sukhumvit Soi 4/11), Khlong Toei, Bangkok 10110', 13.7405, 100.5532, 'https://maps.app.goo.gl/NanaCyberSpeakeasyBangkok']
+      [3, 'The Moonlight Promenade Bar', '152 Wireless Rd, Lumphini, Pathum Wan, Bangkok 10330', 13.7360, 100.5478, 'https://maps.app.goo.gl/MoonlightPromenadeBangkok']
     );
-    console.log('📍  Seeded 3 Locations in Bangkok.');
+    console.log('📍  Seeded 3 Luxury Hotel Bar Locations in Bangkok.');
   }
 
   // Idempotent: check if Drinks already seeded
@@ -142,39 +142,39 @@ async function seedData(db, forceReset = false) {
     await db.run(
       `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['Sparkling Water',
-       'Pure, crisp, and effortlessly calm. You find beauty in simplicity and prefer life without the noise.',
-       '/images/drinks/sparkling-water.png',
+      ['Flawless Crystal Coupe Cocktail',
+       'A flawless, crystal-clear coupe glass filled with a premium signature cocktail, glowing slightly in amber tones. Garnished with a delicate edible gold leaf and a single floating white orchid. Exclusively designed for the refined soul seeking serenity and timeless elegance.',
+       '/images/drinks/crystal-coupe.png',
        -15, -1,
-       1,   // abv: barely any kick — clean and pure
-       2,   // sweetness: lightly refreshing
-       2]   // location_id: Tropic City
+       2,   // abv: smooth and refined
+       4,   // sweetness: subtle honey and floral sweetness
+       2]   // location_id: The Sanctuary Speakeasy
     );
 
     await db.run(
       `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['Tropical Smoothie',
-       'Bold, colourful, and full of life. You thrive on new experiences and bring sunshine wherever you go.',
-       '/images/drinks/tropical-smoothie.png',
+      ['Moonlight Botanical Fizz',
+       'A vibrant and aromatic elixir infused with rare royal herbs and night-blooming jasmine, topped with effervescent champagne mist. Perfect for the adventurous spirit who delights in the mysteries of the tropical garden under moonlight.',
+       '/images/drinks/botanical-fizz.png',
        0, 4,
-       2,   // abv: light fruity kick
-       5,   // sweetness: maximum tropical sweetness
-       3]   // location_id: Nana Cyber Speakeasy
+       3,   // abv: delightful champagne fizz
+       3,   // sweetness: balanced botanical sweetness
+       3]   // location_id: The Moonlight Promenade Bar
     );
 
     await db.run(
       `INSERT INTO Drinks (name, description, image_url, min_score, max_score, abv, sweetness, location_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['Dark Espresso',
-       'Intense, focused, and unapologetically ambitious. You move fast, think deep, and never settle.',
-       '/images/drinks/dark-espresso.png',
+      ['Royal Siam Smoked Teak Old Fashioned',
+       'Deep, powerful, and majestic. Crafted with rare aged spirits smoked over teakwood embers and spiced with wild cinnamon. An unapologetically bold creation reserved for leaders who appreciate unmatched complexity and heritage.',
+       '/images/drinks/smoked-teak.png',
        5, 15,
-       4,   // abv: strong bitter kick
-       1,   // sweetness: barely sweet — pure intensity
-       1]   // location_id: Teens of Thailand
+       5,   // abv: bold, full-bodied spirit strength
+       1,   // sweetness: dry, rich, and aromatic
+       1]   // location_id: Garden of Siam — The Grand Teak Lounge
     );
-    console.log('🍹  Seeded 3 Spirit Drinks with updated score bands.');
+    console.log('🍹  Seeded 3 Luxury Signature Cocktails with updated score bands.');
   } else {
     console.log('⏭   Drinks seed data already present.');
   }
@@ -187,91 +187,83 @@ async function seedData(db, forceReset = false) {
       await db.run('DELETE FROM GameStages');
     }
 
-    // ── Stage 1 – swipe (step_order: 1) • Airport to City (BKK Arrival) ────────
+    // ── Stage 1 – swipe (step_order: 1) • The Arrival (Lobby) ────────
     const s1Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         1,
-        'ก้าวพ้นประตูสุวรรณภูมิ... ไอกรุ่นความชื้นของกรุงเทพฯ ปะทะหน้าทันที พื้นถนนยางมะตอยเปียกฝนสะท้อนแสงนีออนสีชมพูส้ม กลิ่นหมูปิ้งเตาถ่านหอมกระแทกใจลอยผสมควันท่อไอเสีย — Welcome to Bangkok, city of sleepless angels. คืนนี้คุณคือตัวเอกในฟิล์ม Wong Kar-wai ฉบับสยาม... จะเปิดฉากจังหวะ Chillout ซึมซับ Vibe เมือง หรือกระโจนลงสนาม Hardcore Nightlife สุดเพดาน? ปัดการ์ดเลือกเส้นทาง แล้วกระโดดขึ้นพาหนะสู่ใจกลางเมืองเดี๋ยวนี้!',
+        'ก้าวพ้นประตูรถลีมูซีนคันหรูสู่โถงล็อบบี้ไม้สักทองเพดานสูงแห่ง Garden of Siam... กลิ่นหอมละมุนของดอกมะลิตุ๊ดตู่และตะไคร้หอมออร์แกนิกอบอวลท่ามกลางเสียงดนตรีไทยประยุกต์และแจ๊ซคลอเบาๆ พนักงานต้อนรับ Concierge ค้อมศีรษะอย่างนอบน้อม พร้อมยื่นถาดบริการพิเศษระดับ V.I.P. เข้ามาให้คุณเลือกสัมผัสแรกเพื่อรีเฟรชจิตวิญญาณในค่ำคืนนี้...',
         'swipe',
-        '/images/stages/morning-bangkok.png'
+        '/images/stages/stage1_lobby_bg.png'
       ]
     );
 
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
-      [s1Id, 'เอนหลังบน Taxi เปิดกระจกรับลม จิบ Vibe ซึมซับแสงไฟกรุงเทพฯ แบบนุ่มลึก', '/images/options/chill-cocktail.png', -2, 'คำถามที่ 1: จังหวะแรกที่แตะรันเวย์สยาม จะเลือกเดินทางเข้าเมืองแบบไหน?']
+      [s1Id, 'Cold Silk Towel (ผ้าเย็นผ้าไหมสกัดกลิ่นดอกมะลิสดชื่น ปลุกความกระปรี้กระเปร่าผ่อนคลาย)', '/images/options/cold-towel.png', -2, 'การต้อนรับระดับ V.I.P.: คุณต้องการสัมผัสแรกจาก Concierge แบบใด?']
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
-      [s1Id, 'ซ้อนพี่วินทะลวงดงรถติด! เบิ้ลเครื่องกระโจนเข้าสู่ความวุ่นวายยามค่ำคืนแบบ Hardcore!', '/images/options/party-shot.png', 2, 'คำถามที่ 1: จังหวะแรกที่แตะรันเวย์สยาม จะเลือกเดินทางเข้าเมืองแบบไหน?']
-    );
-    await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
-      [s1Id, 'แวะหลบฝนในคาเฟ่ลับข้างทาง สั่งเครื่องดื่มอุ่นๆ ซึมซับเสียงฝนกระทบหลังคา', '/images/options/chill-cocktail.png', -1, 'คำถามที่ 2: ฝนตกลงมาเทกระหน่ำกะทันหันกลางทาง... คุณจะรับมือกับสถานการณ์นี้ยังไง?']
-    );
-    await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
-      [s1Id, 'ลุยต่อไม่สนฝน! ยิ่งฝนตกยิ่งสนุก ท้าทายความเปียกปอนสไตล์ Bangkok Night!', '/images/options/party-shot.png', 3, 'คำถามที่ 2: ฝนตกลงมาเทกระหน่ำกะทันหันกลางทาง... คุณจะรับมือกับสถานการณ์นี้ยังไง?']
-    );
-    await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
-      [s1Id, 'เดินชิลสำรวจบรรยากาศรอบๆ สังเกตผู้คนและแสงสีอย่างสงบ', '/images/options/chill-cocktail.png', 0, 'คำถามที่ 3: ก่อนถึงจุดหมาย เสียงเพลงลอยมาจากร้านสตรีทบาร์เปิดใหม่ คุณจะทำยังไง?']
-    );
-    await db.run(
-      `INSERT INTO Options (stage_id, label, image_url, score_weight, sub_question) VALUES (?, ?, ?, ?, ?)`,
-      [s1Id, 'พุ่งตรงเข้าไปโยกตามจังหวะบีต ทักทายคนแปลกหน้าและเปิดรับมิตรภาพใหม่!', '/images/options/party-shot.png', 2, 'คำถามที่ 3: ก่อนถึงจุดหมาย เสียงเพลงลอยมาจากร้านสตรีทบาร์เปิดใหม่ คุณจะทำยังไง?']
+      [s1Id, 'Warm Herbal Tea (ชาร้อนสมุนไพรตะไคร้หอมออร์แกนิก อบอุ่นลึกล้ำซึมซับความสงบ)', '/images/options/warm-tea.png', 2, 'การต้อนรับระดับ V.I.P.: คุณต้องการสัมผัสแรกจาก Concierge แบบใด?']
     );
 
-    // ── Stage 2 – mixology (step_order: 2) • The Traffic/Ride (Sukhumvit Gridlock) ──
+    // ── Stage 2 – mixology (step_order: 2) • The Garden Promenade (The Journey) ──
     const s2Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         2,
-        'เสียงท่อมอเตอร์ไซค์กระหึ่มครางสลับเสียงแตรในดงรถติดวินาศสันตะโรบนเส้นสุขุมวิท! เหนือหัวคือสายไฟดำขลับพันกันระโยงระยศราวกับงานศิลปะร่วมสมัย สะท้อนป้ายคาราโอเกะสไตล์ยุค 90s สีแดงสดแวววับ ระหว่างที่พาหนะของคุณลัดเลาะฝ่าดงไฟท้ายสีแดงเถือก ร่างกายเรียกร้องให้เติมเชื้อเพลิงก่อนถึงปลายทาง... มาปรุงเครื่องดื่ม Street Alchemist ในถุงก๊อบแก๊บนีออน โยนวัตถุดิบลับแห่งถนนสายนี้ลงไปผสมให้เข้าเส้นเลือด!',
+        'คุณเดินทอดน่องผ่านสวนหย่อมเขตร้อนอันร่มรื่นภายใต้แสงจันทร์ (The Moonlit Courtyard) บึงบัวหลวงทอแสงประกายสีทองสะท้อนโคมไฟทองเหลืองโบราณที่แขวนตามกิ่งก้านของต้นไม้ใหญ่ บาร์เทนเดอร์ระดับมาสเตอร์นำ "ถ้วยเบญจรงค์ขอบทองคำ" มาให้คุณเลือกสรรดอกไม้และสมุนไพรหายากจากสวนแห่งนี้ เพื่อนำไปสกัดเป็น Bespoke Scent Base เครื่องดื่มแก้วพิเศษเฉพาะคุณเท่านั้น...',
         'mixology',
-        '/images/stages/sukhumvit-bts.png'
+        '/images/stages/stage2_courtyard_bg.png'
       ]
     );
 
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s2Id, 'ใบกะเพรากรอบเผ็ดร้อน & พริกขี้หนูไฟจี๊ดจ๊าด (Spicy & Bold Street Heat)', '/images/options/spicy-basil.png', 3]
+      [s2Id, 'ดอกกระดังงาโบราณ & เปลือกอบเชยป่า (Ancient Ylang-Ylang & Wild Cinnamon — หอมลึกล้ำเย้ายวน)', '/images/options/ylang-cinnamon.png', 3]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s2Id, 'น้ำมะพร้าวน้ำหอมคั้นสดเย็นเจี๊ยบจากร้านริมทาง (Sweet & Refreshing Siam Cool)', '/images/options/fresh-coconut.png', -1]
+      [s2Id, 'ยอดชาขาวเขาใหญ่ & ดอกมะลิสกัดเย็น (Silver Needle Tea & Cold-Pressed Jasmine — บริสุทธิ์นุ่มนวล)', '/images/options/white-tea-jasmine.png', -1]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s2Id, 'เหล้ารัมหมักสมุนไพรไทยโบราณเข้มข้น (Herbal & Heavy Alchemist Spirit)', '/images/options/spiced-rum.png', 2]
+      [s2Id, 'กระวานเขียวจันทบุรี & น้ำผึ้งป่าเดือนห้า (Green Cardamom & Wild Honey — อบอุ่นซับซ้อนมีมิติ)', '/images/options/cardamom-honey.png', 2]
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
+      [s2Id, 'ใบเตยหอมสุโขทัย & ผิวมะกรูดสกัดเย็น (Siamese Pandan & Kaffir Lime Zest — สดชื่นกระปรี้กระเปร่า)', '/images/options/pandan-lime.png', -2]
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
+      [s2Id, 'กลีบบัวหลวงปทุม & น้ำค้างเกสรทองคำ (Royal Pink Lotus & Golden Pollen Dew — หอมหวานละเมียดละไม)', '/images/options/royal-lotus.png', 1]
     );
 
-    // ── Stage 3 – tarot (step_order: 3) • Walking into Nana Alley Speakeasy Gate ──
+    // ── Stage 3 – tarot (step_order: 3) • The Hidden Sanctu-Bar (The Destination) ──
     const s3Id = await runInsert(db,
       `INSERT INTO GameStages (step_order, story_text, game_type, background_image_url) VALUES (?, ?, ?, ?)`,
       [
         3,
-        'พาหนะจอดสนิทหน้าปากตรอกลับซอยนานา... เสียงเบสหนักแน่นสั่นสะเทือนผ่านกำแพงตึกแถวจีนโบราณ กลิ่นฝนตกใหม่บนหินแกรนิตผสมกลิ่นควันธูปบางเบาลอยแตะจมูก คุณเดินลัดเลาะผ่านป้ายไฟภาษาจีนและไทยกะพริบไหว จนถึงหน้าประตูบาร์ลับที่ซ่อนอยู่หลังตู้หยอดเหรียญวินเทจ! แม่หมอไซเบอร์นั่งรออยู่ใต้แสงไฟสีแดงชาด พร้อมไพ่ยิปซีลึกล้ำ 3 ใบที่เปิดเผยจุดหมายและเครื่องดื่มแห่งดวงชะตาของค่ำคืนนี้... ดึงไพ่เปิดคำทำนายเลย!',
+        'เมื่อเดินลัดเลาะมาสุดปลายสวนมรกต คุณจะพบกับบานประตูไม้สักโบราณแกะสลักลวดลายไทยสุดประณีตขนาดใหญ่ (The Hidden Sanctu-Bar) เสียงดนตรีแจ๊ซนุ่มๆ ลอยรอดออกมาผ่านช่องประตู บนโต๊ะหินอ่อนสีดำสนิท มีถาดกำมะหยี่สีเขียวมรกตวาง "กุญแจทองเหลืองโบราณ 3 ดอก" (Vintage Brass Keys) เพื่อให้คุณเลือกไขเข้าสู่โซนลับและปลดล็อก Signature Cocktail ประจำดวงชะตาของค่ำคืนนี้... เลือกกุญแจของคุณได้เลย!',
         'tarot',
-        '/images/stages/nana-speakeasy.png'
+        '/images/stages/stage3_door_bg.png'
       ]
     );
 
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s3Id, 'ไพ่ The Neon Garuda (ครุฑสายฟ้า — แก้วเข้มข้น ดุดัน ทรงพลังแห่งค่ำคืน)', '/images/options/tarot-garuda.png', 4]
+      [s3Id, 'The Emerald Sanctuary Key (กุญแจมรกตแห่งวิหารลับ — ปลดล็อกเครื่องดื่มรสเข้มข้น ดุดัน ทรงพลัง และลึกล้ำที่สุดแห่ง Garden of Siam)', '/images/options/key-emerald.png', 4]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s3Id, 'ไพ่ The Cyber Naga (นาคาเรืองแสง — แก้วลึกล้ำ ลึกลับ เย้ายวนชวนหลงใหล)', '/images/options/tarot-kinnaree.png', -3]
+      [s3Id, 'The Golden Lotus Key (กุญแจปทุมทองคำ — ปลดล็อกเครื่องดื่มรสหอมหวาน ละเมียดละไม นุ่มนวลและมีเสน่ห์ดั่งบุษบา)', '/images/options/key-lotus.png', -3]
     );
     await db.run(
       `INSERT INTO Options (stage_id, label, image_url, score_weight) VALUES (?, ?, ?, ?)`,
-      [s3Id, 'ไพ่ The Street Hanuman (หนุมานลุยไฟ — แก้วเปรี้ยวซ่า ท้าทาย คาดเดาไม่ได้)', '/images/options/tarot-hanuman.png', 1]
+      [s3Id, 'The Moonlight Courtyard Key (กุญแจจันทราศาลาไทย — ปลดล็อกเครื่องดื่มรสสดชื่น ซาบซ่า ท้าทายและคาดเดาไม่ได้)', '/images/options/key-moonlight.png', 1]
     );
 
-    console.log('✅  Cinematic Wong Kar-wai & Thai Street Culture storyline seeded (3 Stages, 8 Options).');
+    console.log('✅  Luxury Garden of Siam 5-Star Hotel Bar storyline seeded (3 Stages, 10 Options).');
   } else {
     console.log('⏭   GameStages already seeded.');
   }
