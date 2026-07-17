@@ -23,16 +23,21 @@ import {
   useTransform,
   animate,
 } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Luxury Concierge Scenes Metadata ─────────────────────────────────────────
 const SCENES = [
   {
     panelTitle: '✦ SCENE I : THE LOBBY WELCOME ✦',
+    panelSubTh: '“ ยินดีต้อนรับสู่ The Garden of Siam กรุณาเลือกเครื่องดื่มรับรองสำหรับค่ำคืนนี้... ”',
+    panelSubEn: '“ Welcome to The Garden of Siam. Please select your welcome refreshing ritual for tonight... ”',
     panelSub:   '“ ยินดีต้อนรับสู่ The Garden of Siam กรุณาเลือกเครื่องดื่มรับรองสำหรับค่ำคืนนี้... ”',
     extras:     ['✨', '🥂', '🌿'],
   },
   {
     panelTitle: '✦ SCENE II : THE SENSORY GARDEN ✦',
+    panelSubTh: '“ บรรยากาศสวนพฤกษาไทยร่มรื่น สัมผัสกลิ่นอายที่ปลุกเร้าโสตประสาทของคุณ... ”',
+    panelSubEn: '“ A tranquil lush botanical sanctuary. Experience aromas that awaken your senses... ”',
     panelSub:   '“ บรรยากาศสวนพฤกษาไทยร่มรื่น สัมผัสกลิ่นอายที่ปลุกเร้าโสตประสาทของคุณ... ”',
     extras:     ['🌸', '🎋', '🍯'],
   },
@@ -55,8 +60,13 @@ function TrayCardShadow() {
 
 // ─── Real Photorealistic Beverage Tray Face (`ไม่ใช่ภาพการตูน`) ──────────────────
 function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
+  const { lang, getLocalized } = useLanguage();
   const isLeftActive  = panDirection === 'left';
   const isRightActive = panDirection === 'right';
+
+  const leftLabel = getLocalized(optLeft, 'label') || 'Cold Jasmine Welcome Drink';
+  const rightLabel = getLocalized(optRight, 'label') || 'Steaming Royal Lemongrass Tea';
+  const subText = getLocalized(optLeft, 'sub_question') || (lang === 'en' ? (scene.panelSubEn || scene.panelSub) : (scene.panelSubTh || scene.panelSub));
 
   return (
     <div className="relative w-[310px] sm:w-[340px] h-[440px] sm:h-[460px] bg-[#041410]/95 border-2 border-[#d4af37]/80 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.2)] overflow-hidden flex flex-col select-none backdrop-blur-2xl">
@@ -84,7 +94,7 @@ function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
           <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden border border-[#d4af37]/40 relative bg-[#041410]">
             <img
               src={optLeft?.image_url || '/images/options/cold-towel.png'}
-              alt={optLeft?.label}
+              alt={leftLabel}
               className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#041410]/80 via-transparent to-transparent" />
@@ -95,7 +105,7 @@ function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
 
           <div className="text-center mt-2 px-1 pb-1">
             <p className="font-['Prompt'] text-xs text-[#f8fafc] font-light line-clamp-2 leading-snug m-0">
-              {optLeft?.label || 'Cold Jasmine Welcome Drink'}
+              {leftLabel}
             </p>
           </div>
         </motion.div>
@@ -110,7 +120,7 @@ function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
           <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden border border-[#d4af37]/40 relative bg-[#041410]">
             <img
               src={optRight?.image_url || '/images/options/warm-tea.png'}
-              alt={optRight?.label}
+              alt={rightLabel}
               className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#041410]/80 via-transparent to-transparent" />
@@ -121,7 +131,7 @@ function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
 
           <div className="text-center mt-2 px-1 pb-1">
             <p className="font-['Prompt'] text-xs text-[#f8fafc] font-light line-clamp-2 leading-snug m-0">
-              {optRight?.label || 'Steaming Royal Lemongrass Tea'}
+              {rightLabel}
             </p>
           </div>
         </motion.div>
@@ -137,7 +147,7 @@ function PhotorealisticTrayFace({ scene, optLeft, optRight, panDirection }) {
       {/* ── Subtitle Caption Strip ── */}
       <div className="bg-[#041410]/95 px-4 py-3 border-t border-[#d4af37]/30 text-center">
         <p className="font-['Playfair_Display'] italic text-xs text-[#f8fafc]/90 m-0 tracking-wide">
-          {scene.panelSub}
+          {subText}
         </p>
       </div>
     </div>
@@ -229,26 +239,24 @@ export default function SwipeGame({ question, onSelect }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-between px-3 pt-2 pb-8 gap-4 select-none w-full max-w-xl mx-auto font-['Prompt']">
       
-      {/* ── Action Instruction Header ── */}
+      {/* ── Action Instruction Header (Minimal Clean Luxury) ── */}
       <motion.div
         key={currentCardIdx}
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING_ENTER}
-        className="text-center max-w-md px-2"
+        className="text-center max-w-md px-2 z-30"
       >
-        <div className="inline-block bg-[#0b132b]/95 border border-[#d4af37]/60 rounded-full px-4 py-1 shadow-md mb-2">
-          <span className="font-['Cinzel'] text-[#d4af37] text-xs tracking-[0.2em] uppercase font-bold">
-            ✨ TRAY SELECTION {currentCardIdx + 1} OF {cards.length} ✨
-          </span>
-        </div>
-        <h3 className="text-base sm:text-lg font-['Playfair_Display'] text-[#f8fafc] leading-snug tracking-wide font-light">
-          {question?.content || 'ปัดซ้ายหรือขวาเพื่อเลือกเครื่องดื่มจริงที่คุณปรารถนาสำหรับค่ำคืนนี้...'}
+        <h3 className="font-['Cinzel'] text-base sm:text-lg text-[#fef08a] tracking-[0.18em] font-bold uppercase m-0">
+          {question?.content || 'CONCIERGE SELECTION'}
         </h3>
+        <p className="text-xs sm:text-sm text-[#f8fafc]/80 m-0 font-light mt-1">
+          {`SELECT TRAY (${currentCardIdx + 1}/${cards.length})`}
+        </p>
       </motion.div>
 
       {/* ── Swipeable Concierge Tray Card Stack ── */}
-      <div className="relative flex items-center justify-center w-[320px] sm:w-[350px] h-[450px] sm:h-[470px]">
+      <div className="relative flex items-center justify-center w-[92vw] max-w-[350px] h-[430px] sm:h-[470px]">
         
         {/* Next Card Shadow Layer */}
         {currentCardIdx < cards.length - 1 && <TrayCardShadow />}

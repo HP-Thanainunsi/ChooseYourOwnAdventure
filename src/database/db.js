@@ -61,12 +61,16 @@ async function initDb() {
     return await _db.executeMultiple(sql);
   };
 
-  // Ensure tables and seed data exist on connection
-  try {
-    const { checkAndSeedData } = require('./init');
-    await checkAndSeedData(_db);
-  } catch (seedErr) {
-    console.debug('Note: auto checkAndSeedData inside initDb:', seedErr.message);
+  // Ensure tables and seed data exist on connection (if not invoked by init.js itself)
+  if (!process.argv[1] || !process.argv[1].includes('init.js')) {
+    try {
+      const { checkAndSeedData } = require('./init');
+      if (typeof checkAndSeedData === 'function') {
+        await checkAndSeedData(_db);
+      }
+    } catch (seedErr) {
+      console.debug('Note: auto checkAndSeedData inside initDb:', seedErr.message);
+    }
   }
 
   console.log(`🗄   Connected to libSQL database (${authToken ? 'Turso Cloud' : url})`);

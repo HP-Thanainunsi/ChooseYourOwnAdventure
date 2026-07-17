@@ -19,17 +19,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
-import SwipeGame    from './SwipeGame';
+import SwipeGame from './SwipeGame';
 import MixologyGame from './MixologyGame';
-import TarotGame    from './TarotGame';
+import TarotGame from './TarotGame';
 
 // ─── Map question/stage game_type → React component ───────────────────────────
 const COMPONENT_MAP = {
-  swipe:     SwipeGame,
-  mixology:  MixologyGame,
+  swipe: SwipeGame,
+  mixology: MixologyGame,
   drag_drop: MixologyGame,
-  tarot:     TarotGame,
+  tarot: TarotGame,
 };
 
 // ─── Luxury Glass Message Panel Component ─────────────────────────────────────
@@ -93,31 +94,31 @@ function LuxuryTransitionOverlay({ isWiping, text }) {
 // ─── Luxury Chamber Themes per Section ────────────────────────────────────────
 const LUXURY_CHAMBERS = [
   {
-    bgGrad:     'linear-gradient(135deg, #021e14 0%, #043927 100%)',
-    bgAccent:   '#d4af37',
+    bgGrad: 'linear-gradient(135deg, #021e14 0%, #043927 100%)',
+    bgAccent: '#d4af37',
     issueTitle: 'CHAMBER I • THE CONCIERGE SANCTUARY',
-    soundLeft:  '🌿 Jasmine Breeze',
+    soundLeft: '🌿 Jasmine Breeze',
     soundRight: '✨ Golden Dew',
-    thaiIcon1:  '🪷',
-    thaiIcon2:  '🍸',
+    thaiIcon1: '🪷',
+    thaiIcon2: '🍸',
   },
   {
-    bgGrad:     'linear-gradient(135deg, #1c130d 0%, #2c1810 100%)',
-    bgAccent:   '#f59e0b',
+    bgGrad: 'linear-gradient(135deg, #1c130d 0%, #2c1810 100%)',
+    bgAccent: '#f59e0b',
     issueTitle: 'CHAMBER II • BENJARONG ALCHEMY LAB',
-    soundLeft:  '🥃 Smoked Teakwood',
+    soundLeft: '🥃 Smoked Teakwood',
     soundRight: '🍯 Royal Honey',
-    thaiIcon1:  '⚱️',
-    thaiIcon2:  '🌿',
+    thaiIcon1: '⚱️',
+    thaiIcon2: '🌿',
   },
   {
-    bgGrad:     'linear-gradient(135deg, #0b132b 0%, #1c2541 100%)',
-    bgAccent:   '#d4af37',
+    bgGrad: 'linear-gradient(135deg, #0b132b 0%, #1c2541 100%)',
+    bgAccent: '#d4af37',
     issueTitle: 'CHAMBER III • THE BRASS KEY VAULT',
-    soundLeft:  '🗝️ Secret Gate',
+    soundLeft: '🗝️ Secret Gate',
     soundRight: '✨ Emerald Glow',
-    thaiIcon1:  '🗝️',
-    thaiIcon2:  '🪷',
+    thaiIcon1: '🗝️',
+    thaiIcon2: '🪷',
   },
 ];
 
@@ -156,15 +157,16 @@ function ScrollySection({
   const bgY = useTransform(scrollYProgress, [0, 1], [-140, 140]);
 
   // ── 1.5. Middle Parallax Layer (`translateZ(-140px)`) ──
-  const midY  = useTransform(scrollYProgress, [0, 1], [-70, 70]);
+  const midY = useTransform(scrollYProgress, [0, 1], [-70, 70]);
   const wireY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
   // ── 3. Foreground Layer (Fastest) `translateZ(180px)` ──────────────────────
-  const fgY        = useTransform(scrollYProgress, [0, 1], [100, -100]);
-  const fgOpacity  = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
+  const fgY = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const fgOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
 
-  const theme      = LUXURY_CHAMBERS[index % LUXURY_CHAMBERS.length];
-  const gameType   = question?.game_type || question?.type || 'swipe';
+  const { lang, getLocalized } = useLanguage();
+  const theme = LUXURY_CHAMBERS[index % LUXURY_CHAMBERS.length];
+  const gameType = question?.game_type || question?.type || 'swipe';
   const QuestionComponent = COMPONENT_MAP[gameType] ?? SwipeGame;
 
   const handleSelection = (optionId) => {
@@ -172,9 +174,24 @@ function ScrollySection({
     onSelectOption(index, optionId);
   };
 
-  const storyText  = question?.story_text || question?.content || 'Your spirit journey unfolds...';
+  const storyText =
+    getLocalized(question, 'content') ||
+    getLocalized(question, 'story_text') ||
+    question?.content ||
+    question?.story_text ||
+    'Your spirit journey unfolds...';
+
+  const chamberTitle =
+    lang === 'th' && index === 0
+      ? 'ห้องที่ 1 • วิหารต้อนรับส่วนตัว'
+      : lang === 'th' && index === 1
+        ? 'ห้องที่ 2 • โถงผสมโอสถเบญจรงค์'
+        : lang === 'th' && index === 2
+          ? 'ห้องที่ 3 • บานกุญแจลับแห่งสยาม'
+          : theme.issueTitle;
+
   const stepNumber = question?.step_order || index + 1;
-  const bgUrl      = question?.background_image_url || DEFAULT_STAGE_BGS[index % DEFAULT_STAGE_BGS.length];
+  const bgUrl = question?.background_image_url || DEFAULT_STAGE_BGS[index % DEFAULT_STAGE_BGS.length];
 
   return (
     <section
@@ -218,7 +235,7 @@ function ScrollySection({
             className="font-['Cinzel'] text-sm md:text-base tracking-[0.2em] font-semibold uppercase px-4 py-1.5 rounded-full border border-[#d4af37]/50 shadow-sm"
             style={{ backgroundColor: 'rgba(4, 57, 39, 0.7)', color: theme.bgAccent }}
           >
-            {theme.issueTitle}
+            {chamberTitle}
           </span>
           <span className="font-['Cinzel'] text-xs text-[#f8fafc]/60 uppercase tracking-widest">
             CHAMBER {stepNumber} OF {total}
@@ -234,7 +251,7 @@ function ScrollySection({
         }}
         className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex flex-col justify-between py-10"
       >
-        {/* Luxury Sanctuary Ribbon */}
+        {/* Luxury Sanctuary Ribbon 
         <div className="w-full opacity-80 border-y border-[#d4af37]/40 h-12 relative flex items-center justify-around bg-gradient-to-r from-[#041410] via-[#043927]/80 to-[#041410] shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-md">
           <span className="text-lg text-[#d4af37] animate-pulse">✨</span>
           <span className="text-xs md:text-sm font-['Cinzel'] text-[#d4af37] tracking-[0.25em] uppercase">
@@ -242,7 +259,7 @@ function ScrollySection({
           </span>
           <span className="text-lg text-[#d4af37] animate-pulse">✨</span>
         </div>
-
+*/}
         {/* Floating Concierge & Signature Badges */}
         <motion.div style={{ y: midY }} className="flex justify-between w-full px-4 sm:px-10 opacity-85">
           <div className="bg-[#043927]/85 border border-[#d4af37]/50 px-4 py-1.5 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.6)] text-[#f8fafc] font-['Prompt'] text-xs sm:text-sm flex items-center gap-2 backdrop-blur-md">
@@ -258,9 +275,8 @@ function ScrollySection({
 
       {/* ─── LAYER 2: MIDDLE LAYER (STORY TEXT & INTERACTIVE MINI-GAME) `translateZ(0px)` ── */}
       <div
-        className={`relative z-20 w-full max-w-3xl flex flex-col items-center transition-all duration-500 ${
-          !isUnlocked ? 'opacity-30 pointer-events-none filter blur-[4px]' : 'opacity-100'
-        }`}
+        className={`relative z-20 w-full max-w-3xl flex flex-col items-center transition-all duration-500 ${!isUnlocked ? 'opacity-30 pointer-events-none filter blur-[4px]' : 'opacity-100'
+          }`}
         style={{ transform: 'translateZ(0px)' }}
       >
         {/* Completion status badge */}
@@ -335,11 +351,12 @@ export default function StoryScrollContainer({
   onSelectOption,
   onCompleteAll,
 }) {
+  const { lang } = useLanguage();
   const [unlockedIndex, setUnlockedIndex] = useState(0);
   const [selectionsMap, setSelectionsMap] = useState({});
-  const [isWiping, setIsWiping]           = useState(false);
-  const [wipeText, setWipeText]           = useState('');
-  const sectionRefs                       = useRef({});
+  const [isWiping, setIsWiping] = useState(false);
+  const [wipeText, setWipeText] = useState('');
+  const sectionRefs = useRef({});
 
   const sortedStages = [...questions].sort((a, b) => {
     const orderA = Number(a.step_order) || 0;
@@ -429,19 +446,11 @@ export default function StoryScrollContainer({
     >
       <LuxuryTransitionOverlay isWiping={isWiping} text={wipeText} />
 
-      {/* Top Sanctuary Guide Banner */}
-      <div className="sticky top-5 z-50 bg-[#0b132b]/90 border border-[#d4af37]/60 px-6 py-2.5 shadow-[0_10px_25px_rgba(0,0,0,0.8)] rounded-full flex items-center gap-3 backdrop-blur-xl">
-        <span className="text-lg">🌿</span>
-        <span className="font-['Cinzel'] text-[#d4af37] tracking-[0.15em] text-xs md:text-sm uppercase font-semibold">
-          1 CHAMBER = 1 SELECTION • RESOLVE TO UNLOCK NEXT VAULT
-        </span>
-      </div>
-
       {/* Render stages vertically */}
       <div className="w-full flex flex-col items-center">
         <AnimatePresence mode="wait">
           {renderedStages.map((stage, index) => {
-            const isUnlocked  = index <= unlockedIndex;
+            const isUnlocked = index <= unlockedIndex;
             const isCompleted = selectionsMap[index] !== undefined;
 
             return (
@@ -483,10 +492,10 @@ export default function StoryScrollContainer({
                 textShadow: '0 2px 10px rgba(0,0,0,0.8)',
               }}
             >
-              SANCTUARY JOURNEY RESOLVED
+              {lang === 'th' ? 'เส้นทางแห่งวิหารลับเสร็จสมบูรณ์' : 'SANCTUARY JOURNEY RESOLVED'}
             </h3>
             <p className="font-['Playfair_Display'] italic text-lg text-[#f8fafc]/90 mt-3 font-light">
-              Crafting your bespoke 5-star signature cocktail...
+              {lang === 'th' ? 'มาสเตอร์บาร์เทนเดอร์กำลังรังสรรค์ค็อกเทลแก้วพิเศษของคุณ...' : 'Crafting your bespoke 5-star signature cocktail...'}
             </p>
           </motion.div>
         )}

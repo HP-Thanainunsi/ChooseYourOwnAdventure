@@ -46,7 +46,7 @@ async function getGameFlow(req, res) {
 
     // Fetch all game stages sequenced by step_order (no score data)
     const stages = await queryAll(db,
-      `SELECT id, step_order, story_text, game_type, background_image_url
+      `SELECT id, step_order, story_text, story_text_en, game_type, background_image_url
        FROM   GameStages
        ORDER  BY step_order ASC, id ASC`
     );
@@ -56,10 +56,11 @@ async function getGameFlow(req, res) {
     const gameFlow = await Promise.all(stages.map(async (stage) => ({
       ...stage,
       // Provide compatibility mappings for frontend components expecting type/content:
-      type:    stage.game_type,
-      content: stage.story_text,
+      type:       stage.game_type,
+      content:    stage.story_text,
+      content_en: stage.story_text_en || stage.story_text,
       options: await queryAll(db,
-        `SELECT id, stage_id, label, image_url, sub_question
+        `SELECT id, stage_id, label, label_en, image_url, sub_question, sub_question_en
          FROM   Options
          WHERE  stage_id = ?
          ORDER  BY id`,
@@ -143,7 +144,7 @@ async function calculateResult(req, res) {
 
     // ── Drink lookup ─────────────────────────────────────────────────────────
     const drink = await queryOne(db,
-      `SELECT id, name, description, image_url, min_score, max_score, abv, sweetness, location_id
+      `SELECT id, name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id
        FROM   Drinks
        WHERE  min_score <= ?
          AND  max_score >= ?
@@ -165,7 +166,7 @@ async function calculateResult(req, res) {
     let location = null;
     if (drink.location_id) {
       location = await queryOne(db,
-        `SELECT id, name, address, latitude, longitude, google_maps_link
+        `SELECT id, name, name_en, address, address_en, latitude, longitude, google_maps_link
          FROM   Locations
          WHERE  id = ?`,
         [drink.location_id]

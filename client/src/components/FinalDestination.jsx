@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function FinalDestination({
   drinkImage = '/images/drinks/tropical-smoothie.png',
@@ -24,6 +25,8 @@ export default function FinalDestination({
   googleMapsUrl = 'https://maps.app.goo.gl/TeensOfThailandBangkok',
   onRestart = null,
 }) {
+  const { lang } = useLanguage();
+
   // Generate or parse retro coordinates
   const getCoordinates = (name = '') => {
     if (name.toLowerCase().includes('teens')) return 'LAT 13.7388° N · LON 100.5144° E';
@@ -68,7 +71,7 @@ export default function FinalDestination({
         <div className="bg-[#043927]/90 border border-[#d4af37]/60 px-4 py-1.5 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl flex items-center gap-2.5">
           <span className="w-2 h-2 rounded-full bg-[#fef08a] animate-ping" />
           <span className="font-['Cinzel'] text-[#d4af37] tracking-[0.2em] text-xs font-bold uppercase">
-            ✦ SANCTUARY DESTINATION UNLOCKED ✦
+            {lang === 'th' ? '✦ ปลดล็อกพิกัดบาร์ลับ ✦' : '✦ SANCTUARY DESTINATION UNLOCKED ✦'}
           </span>
         </div>
 
@@ -77,9 +80,9 @@ export default function FinalDestination({
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             onClick={onRestart}
-            className="bg-[#1c130d]/90 border border-[#d4af37]/80 text-[#fef08a] font-['Cinzel'] text-xs tracking-[0.15em] px-4 py-1.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.7)] backdrop-blur-xl hover:bg-[#043927] transition-all uppercase font-semibold"
+            className="bg-[#1c130d]/90 border border-[#d4af37]/80 text-[#fef08a] font-['Cinzel'] text-xs tracking-[0.15em] px-4 py-1.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.7)] backdrop-blur-xl hover:bg-[#043927] transition-all uppercase font-semibold cursor-pointer"
           >
-            ✦ RE-EXPERIENCE
+            {lang === 'th' ? '✦ เริ่มประสบการณ์ใหม่' : '✦ RE-EXPERIENCE'}
           </motion.button>
         )}
       </div>
@@ -94,7 +97,7 @@ export default function FinalDestination({
         >
           {/* Top Royal Badge */}
           <div className="absolute -top-4 left-6 bg-[#1c130d] text-[#fef08a] font-['Cinzel'] text-xs tracking-[0.25em] px-5 py-1.5 rounded-full border border-[#d4af37] shadow-[0_5px_15px_rgba(0,0,0,0.8)] font-bold uppercase">
-            ✦ MEMBERS ONLY · ROYAL INVITATION ✦
+            {lang === 'th' ? '✦ สำหรับสมาชิก VIP · บัตรเชิญพิเศษ ✦' : '✦ MEMBERS ONLY · ROYAL INVITATION ✦'}
           </div>
 
           {/* Drink Name Heading — Elegant Serif */}
@@ -112,7 +115,7 @@ export default function FinalDestination({
 
           {/* Bottom Stamp */}
           <div className="absolute -bottom-3.5 right-6 bg-[#0b132b] border border-[#d4af37] px-4 py-1 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.8)] font-['Cinzel'] text-xs text-[#d4af37] tracking-[0.2em] font-semibold uppercase">
-            ✦ 5-STAR LUXURY BAR ✦
+            {lang === 'th' ? '✦ บาร์ลับระดับ 5 ดาว ✦' : '✦ 5-STAR LUXURY BAR ✦'}
           </div>
         </motion.div>
       </div>
@@ -134,7 +137,7 @@ export default function FinalDestination({
               </div>
               <div>
                 <span className="font-['Cinzel'] text-[10px] uppercase font-bold text-[#d4af37] tracking-[0.2em] block">
-                  SECRET CONCIERGE DESTINATION
+                  {lang === 'th' ? 'พิกัดลับสำหรับคุณโดยเฉพาะ' : 'SECRET CONCIERGE DESTINATION'}
                 </span>
                 <h2 className="font-['Cinzel'] text-lg sm:text-xl text-[#fef08a] font-bold tracking-wide m-0">
                   {barName}
@@ -160,7 +163,7 @@ export default function FinalDestination({
             className="w-full bg-gradient-to-r from-[#047857] via-[#043927] to-[#d4af37] border border-[#fef08a] text-white font-['Cinzel'] text-base sm:text-lg tracking-[0.2em] font-bold py-4 px-6 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(212,175,55,0.3)] flex items-center justify-center gap-3 text-center uppercase cursor-pointer transition-all hover:brightness-110"
           >
             <span className="text-xl">🛎️</span>
-            <span>REQUEST CONCIERGE NAVIGATION</span>
+            <span>{lang === 'th' ? 'ขอนำทางจากคอนเซียร์จ (Google Maps)' : 'REQUEST CONCIERGE NAVIGATION'}</span>
             <span className="text-xl">✨</span>
           </motion.a>
         </div>

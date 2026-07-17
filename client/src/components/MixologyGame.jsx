@@ -16,7 +16,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   useDraggable,
@@ -28,15 +28,16 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Dynamic Botanical Color Palette & Fallback Icons ─────────────────────────
 const PALETTE = [
-  { color: '#34d399', glow: 'rgba(52, 211, 153, 0.6)', icon: '🌿', name: 'Siamese Pandan' },
-  { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.6)', icon: '🥃', name: 'Wild Cinnamon & Ylang' },
-  { color: '#60a5fa', glow: 'rgba(96, 165, 250, 0.6)', icon: '🪷', name: 'Silver Needle & Jasmine' },
-  { color: '#fde047', glow: 'rgba(253, 224, 71, 0.6)', icon: '🍯', name: 'Cardamom & Wild Honey' },
-  { color: '#f43f5e', glow: 'rgba(244, 63, 94, 0.6)',  icon: '🌺', name: 'Royal Lotus Dew' },
-  { color: '#a3e635', glow: 'rgba(163, 230, 53, 0.6)', icon: '🍋', name: 'Kaffir Lime Zest' },
+  { color: '#34d399', glow: 'rgba(52, 211, 153, 0.6)', icon: '🌿', name: 'Siamese Pandan', nameTh: 'ใบเตยสยาม', nameEn: 'Siamese Pandan' },
+  { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.6)', icon: '🥃', name: 'Wild Cinnamon & Ylang', nameTh: 'อบเชยป่าและกระดังงา', nameEn: 'Wild Cinnamon & Ylang' },
+  { color: '#60a5fa', glow: 'rgba(96, 165, 250, 0.6)', icon: '🪷', name: 'Silver Needle & Jasmine', nameTh: 'ชาเข็มเงินมะลิลา', nameEn: 'Silver Needle & Jasmine' },
+  { color: '#fde047', glow: 'rgba(253, 224, 71, 0.6)', icon: '🍯', name: 'Cardamom & Wild Honey', nameTh: 'กระวานและน้ำผึ้งป่า', nameEn: 'Cardamom & Wild Honey' },
+  { color: '#f43f5e', glow: 'rgba(244, 63, 94, 0.6)',  icon: '🌺', name: 'Royal Lotus Dew', nameTh: 'น้ำค้างเกสรบัวหลวง', nameEn: 'Royal Lotus Dew' },
+  { color: '#a3e635', glow: 'rgba(163, 230, 53, 0.6)', icon: '🍋', name: 'Kaffir Lime Zest', nameTh: 'ผิวมะกรูดหอมระเหย', nameEn: 'Kaffir Lime Zest' },
 ];
 
 function getBotanicalTheme(idx = 0) {
@@ -74,19 +75,6 @@ function blendIngredientColors(items = []) {
   return rgbToHex(totalR / count, totalG / count, totalB / count);
 }
 
-// ─── Orbital Positioning Map Around Central Jar (`ลอยรอบๆ โหลแก้ว`) ─────────────
-function getOrbitalPosition(idx, total) {
-  // Pre-calculated orbital coordinates around the central vessel
-  const ORBITAL_SLOTS = [
-    { top: '-4%', left: '4%' },     // 0: Top-Left
-    { top: '-4%', right: '4%' },    // 1: Top-Right
-    { top: '38%', left: '-5%' },    // 2: Middle-Left
-    { top: '38%', right: '-5%' },   // 3: Middle-Right
-    { bottom: '-2%', left: '25%' }, // 4: Bottom-Center
-    { bottom: '-2%', right: '15%' } // 5: Extra Slot
-  ];
-  return ORBITAL_SLOTS[idx % ORBITAL_SLOTS.length];
-}
 
 // ─── Crystal Clear Benjarong Glass Decanter (`SVG ขวดโหลใส`) ────────────────
 const VW  = 180;
@@ -205,20 +193,31 @@ function CrystalDecanter({ fillPercent, blendedColor, isOver, droppedItems }) {
   );
 }
 
-// ─── Droppable Center Vessel Zone (`โหลแก้วตรงกลาง`) ────────────────────────────
+// ─── Droppable Center Vessel Zone (`โหลแก้วตรงกลาง ไม่เอากรอบ`) ─────────────────
 function DroppableVesselZone({ isOver, droppedItems, onRemoveItem, onClearAll }) {
+  const { lang, getLocalized } = useLanguage();
   const { setNodeRef } = useDroppable({ id: 'benjarong-vessel-zone' });
   const fillPercent = Math.min(96, droppedItems.length * 32);
   const blendedColor = blendIngredientColors(droppedItems);
+
+  const getStatusBadgeText = () => {
+    if (droppedItems.length === 1) {
+      return lang === 'th' ? 'สกัดเดี่ยว' : 'SINGLE INFUSION';
+    }
+    return lang === 'th'
+      ? `ผสมผสาน ${droppedItems.length} วัตถุดิบ`
+      : `BLENDED ${droppedItems.length} BOTANICALS`;
+  };
 
   return (
     <motion.div
       ref={setNodeRef}
       animate={isOver ? { scale: 1.06 } : { scale: 1 }}
       transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-      className="relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-3xl border border-[#d4af37]/60 bg-[#041410]/85 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_50px_rgba(212,175,55,0.25)] backdrop-blur-2xl w-[260px] sm:w-[290px] z-20"
+      // Completely removed card borders and background frames (`ไม่เอากรอบ`)
+      className="relative flex flex-col items-center justify-center p-2 sm:p-4 w-[240px] sm:w-[280px] md:w-[310px] z-20 select-none"
     >
-      {/* Crystal Decanter */}
+      {/* Crystal Decanter SVG (Borderless floating in open space) */}
       <CrystalDecanter
         fillPercent={fillPercent}
         blendedColor={blendedColor}
@@ -233,40 +232,43 @@ function DroppableVesselZone({ isOver, droppedItems, onRemoveItem, onClearAll })
             initial={{ scale: 0.8, opacity: 0, y: -10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="absolute top-3 bg-[#043927]/95 border border-[#d4af37] px-3.5 py-1 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl flex items-center gap-2"
+            className="absolute top-2 bg-[#043927]/95 border border-[#d4af37] px-3 py-1 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl flex items-center gap-2 z-30"
           >
             <span className="w-2.5 h-2.5 rounded-full animate-ping" style={{ backgroundColor: blendedColor }} />
-            <span className="font-['Cinzel'] text-[11px] text-[#fef08a] tracking-[0.16em] font-bold uppercase">
-              ✦ {droppedItems.length === 1 ? 'SINGLE INFUSION' : `BLENDED ${droppedItems.length} BOTANICALS`} ✦
+            <span className="font-['Cinzel'] text-[10px] sm:text-[11px] text-[#fef08a] tracking-[0.16em] font-bold uppercase">
+              ✦ {getStatusBadgeText()} ✦
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Dropped Botanical Tags inside Jar (Removable) */}
+      {/* Dropped Botanical Tags inside Jar (Removable to return to orbit) */}
       {droppedItems.length > 0 && (
-        <div className="w-full mt-3 flex flex-wrap items-center justify-center gap-1.5 max-h-24 overflow-y-auto px-1">
-          {droppedItems.map((item, idx) => (
-            <motion.div
-              key={`dropped-${item.id}-${idx}`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="bg-[#1c130d]/95 border border-[#d4af37]/70 rounded-full py-0.5 px-2.5 flex items-center gap-1.5 shadow-sm"
-            >
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.elixirColor }} />
-              <span className="font-['Prompt'] text-[11px] text-[#f8fafc] max-w-[110px] truncate font-light">
-                {item.label}
-              </span>
-              <button
-                onClick={() => onRemoveItem(item.id)}
-                className="text-xs text-[#d4af37] hover:text-[#f43f5e] font-bold px-1 transition-colors"
-                title="Remove ingredient"
+        <div className="w-full mt-2 flex flex-wrap items-center justify-center gap-1.5 max-h-28 overflow-y-auto px-1 z-30">
+          {droppedItems.map((item, idx) => {
+            const itemLabel = getLocalized(item, 'label') || item.label;
+            return (
+              <motion.div
+                key={`dropped-${item.id}-${idx}`}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="bg-[#1c130d]/95 border border-[#d4af37]/70 rounded-full py-0.5 px-2.5 flex items-center gap-1.5 shadow-md"
               >
-                ✕
-              </button>
-            </motion.div>
-          ))}
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.elixirColor }} />
+                <span className="font-['Prompt'] text-[10px] sm:text-[11px] text-[#f8fafc] max-w-[100px] sm:max-w-[120px] truncate font-light">
+                  {itemLabel}
+                </span>
+                <button
+                  onClick={() => onRemoveItem(item.id)}
+                  className="text-xs text-[#d4af37] hover:text-[#f43f5e] font-bold px-1 transition-colors cursor-pointer"
+                  title="Remove ingredient to return to orbit"
+                >
+                  ✕
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
@@ -274,106 +276,132 @@ function DroppableVesselZone({ isOver, droppedItems, onRemoveItem, onClearAll })
       {droppedItems.length > 1 && (
         <button
           onClick={onClearAll}
-          className="mt-2.5 font-['Cinzel'] text-[0.65rem] text-[#d4af37]/70 hover:text-[#fef08a] tracking-[0.2em] uppercase transition-colors"
+          className="mt-2 font-['Cinzel'] text-[0.65rem] sm:text-xs text-[#d4af37]/80 hover:text-[#fef08a] tracking-[0.2em] uppercase transition-colors z-30 cursor-pointer"
         >
-          [ ✕ CLEAR ALL ]
+          {lang === 'en' ? '[ ✕ CLEAR ALL ]' : '[ ✕ ล้างทั้งหมด ]'}
         </button>
       )}
     </motion.div>
   );
 }
 
-// ─── Floating Surrounding Ingredient Item (`ลอยรอบๆ โหลแก้ว`) ────────────────
-function OrbitalFloatingItem({ option, themeIdx, isDropped, onToggle, total }) {
+// ─── Floating Surrounding Ingredient Item (`ลอยเป็นวงกลมเรียงกัน ลากตามเมาส์ หายไปเมื่อเข้าโหล กลับมาที่เดิมเมื่อยกเลิก`) ───
+function OrbitalFloatingItem({ option, themeIdx, isDropped, onToggle, total, baseAngle }) {
+  const { lang, getLocalized } = useLanguage();
   const theme = getBotanicalTheme(themeIdx);
-  const orbitalPos = getOrbitalPosition(themeIdx, total);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: option.id,
     data: { option, themeIdx, elixirColor: theme.color, icon: theme.icon },
   });
 
-  let itemOpacity = 1;
-  if (isDragging) itemOpacity = 0.3;
-  else if (isDropped) itemOpacity = 0.4;
+  // Calculate circular coordinates orbiting around the center (`(0,0)` is decanter center)
+  const angle = (baseAngle + (themeIdx * (360 / total))) % 360;
+  const rad = (angle * Math.PI) / 180;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const radiusX = isMobile ? 135 : 210;
+  const radiusY = isMobile ? 155 : 190;
+  const orbitX = Math.round(Math.cos(rad) * radiusX);
+  const orbitY = Math.round(Math.sin(rad) * radiusY);
 
-  const style = {
-    ...orbitalPos,
-    transform: CSS.Translate.toString(transform),
-    opacity: itemOpacity,
-  };
+  const label = getLocalized(option, 'label') || option.label;
+  const botName = lang === 'en' ? (theme.nameEn || theme.name) : (theme.nameTh || theme.name);
 
-  // Graceful orbital floating & rotation physics around the center jar
-  const floatAnimation = isDropped
-    ? {}
-    : {
-        y: [0, -12, 0, 10, 0],
-        x: [0, (themeIdx % 2 === 0 ? 8 : -8), 0, (themeIdx % 2 === 0 ? -6 : 6), 0],
-        rotate: [-3, 3.5, -1.5, 2.5, -3],
-        scale: [1, 1.05, 1],
-      };
+  // When dropped inside (`เมื่อเอาเข้าโหลแล้ววัตถุดิบต้องหาย`)
+  if (isDropped) {
+    return (
+      <motion.div
+        animate={{ opacity: 0, scale: 0 }}
+        transition={{ duration: 0.35, ease: 'easeIn' }}
+        style={{ pointerEvents: 'none', position: 'absolute', left: '50%', top: '50%', x: orbitX, y: orbitY, marginLeft: '-3.5rem', marginTop: '-3.5rem' }}
+        className="w-24 sm:w-28 md:w-32"
+      />
+    );
+  }
 
+  // Double wrapper: Outer slot orbits in a circle around the vessel (`ลอยเป็นวงกลมเรียงกัน`)
+  // Inner wrapper drags directly with mouse (`ลากตามเมาส์`) and springs back (`กลับมาลอยอยู่ที่เดิม`) when canceled!
   return (
     <motion.div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      animate={floatAnimation}
-      transition={{
-        duration: 4.2 + (themeIdx % 3) * 0.9,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
-      whileHover={{ scale: 1.15, zIndex: 50 }}
-      onClick={() => onToggle(option, themeIdx, theme)}
-      className={`absolute z-30 flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl cursor-pointer select-none transition-all w-28 sm:w-32 ${
-        isDropped ? 'grayscale opacity-50' : 'hover:brightness-115'
-      }`}
+      style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: '-3.5rem', marginTop: '-3.5rem' }}
+      animate={{ x: orbitX, y: orbitY }}
+      transition={{ type: 'tween', duration: 0.05, ease: 'linear' }}
+      className="z-30 pointer-events-auto"
     >
-      {/* Borderless Image OR Glowing Botanical Icon (`png ไม่เอากรอบ ลอยรอบๆ`) */}
-      <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-1 pointer-events-none">
-        {option.image_url ? (
-          <img
-            src={option.image_url}
-            alt={option.label}
-            className="w-full h-full object-contain drop-shadow-[0_14px_24px_rgba(212,175,55,0.5)] filter"
-          />
-        ) : (
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-3xl sm:text-4xl drop-shadow-[0_10px_20px_rgba(212,175,55,0.45)]"
-            style={{ backgroundColor: 'rgba(4, 57, 39, 0.7)', border: `1px solid ${theme.color}` }}
-          >
-            {theme.icon}
-          </div>
-        )}
+      <motion.div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Translate.toString(transform),
+          zIndex: isDragging ? 300 : 30,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          transition: isDragging
+            ? 'none'
+            : 'transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease, scale 0.35s ease',
+        }}
+        {...attributes}
+        {...listeners}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{
+          opacity: 1,
+          scale: isDragging ? 1.25 : 1,
+          rotate: isDragging ? 0 : [0, 5, -5, 0][themeIdx % 4],
+        }}
+        transition={{
+          rotate: { duration: 3 + (themeIdx % 3), repeat: Infinity, ease: 'easeInOut' },
+          scale: { duration: 0.2 },
+        }}
+        whileHover={{ scale: 1.15, zIndex: 150 }}
+        onClick={() => onToggle(option, themeIdx, theme)}
+        className="flex flex-col items-center justify-center p-1.5 sm:p-2.5 rounded-2xl select-none transition-shadow w-24 sm:w-28 md:w-32 hover:brightness-115 touch-none"
+      >
+        {/* Borderless Image OR Glowing Botanical Icon (`png ไม่เอากรอบ ลอยรอบๆ`) */}
+        <div className="relative w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 flex items-center justify-center mb-1 pointer-events-none">
+          {option.image_url ? (
+            <img
+              src={option.image_url}
+              alt={label}
+              className="w-full h-full object-contain drop-shadow-[0_14px_24px_rgba(212,175,55,0.5)] filter"
+            />
+          ) : (
+            <div
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-2xl sm:text-3xl drop-shadow-[0_10px_20px_rgba(212,175,55,0.45)]"
+              style={{ backgroundColor: 'rgba(4, 57, 39, 0.7)', border: `1px solid ${theme.color}` }}
+            >
+              {theme.icon}
+            </div>
+          )}
+        </div>
 
-        {/* Selected Checkmark Badge */}
-        {isDropped && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#047857] border border-[#fef08a] flex items-center justify-center text-white text-[10px] font-bold shadow-md">
-            ✓
-          </div>
-        )}
-      </div>
-
-      {/* Glowing Floating Label (No Card Box Border!) */}
-      <div className="text-center w-full pointer-events-none bg-[#041410]/75 backdrop-blur-md px-2 py-1 rounded-xl border border-[#d4af37]/40 shadow-sm">
-        <span className="font-['Cinzel'] text-[0.58rem] text-[#d4af37] tracking-[0.14em] font-bold uppercase block truncate">
-          ✦ {theme.name}
-        </span>
-        <p className="font-['Prompt'] text-[11px] text-[#f8fafc] font-light leading-snug m-0 line-clamp-1">
-          {option.label}
-        </p>
-      </div>
+        {/* Glowing Floating Label (No Card Box Border!) */}
+        <div className="text-center w-full pointer-events-none bg-[#041410]/80 backdrop-blur-md px-1.5 py-0.5 sm:py-1 rounded-xl border border-[#d4af37]/40 shadow-sm">
+          <span className="font-['Cinzel'] text-[0.55rem] sm:text-[0.6rem] text-[#d4af37] tracking-[0.14em] font-bold uppercase block truncate">
+            ✦ {botName}
+          </span>
+          <p className="font-['Prompt'] text-[10px] sm:text-[11px] text-[#f8fafc] font-light leading-snug m-0 line-clamp-1">
+            {label}
+          </p>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function MixologyGame({ question, onSelect }) {
+  const { lang } = useLanguage();
   const options = question?.options || [];
   const [droppedItems, setDroppedItems] = useState([]);
   const [activeDragItem, setActiveDragItem] = useState(null);
+  const [baseAngle, setBaseAngle] = useState(0);
+
+  // Continuous smooth orbital rotation around the decanter (`ลอยเป็นวงกลมเรียงกัน`)
+  useEffect(() => {
+    if (activeDragItem !== null) return; // Pause circle rotation right when user grabs an item (`ลอยตามเมาส์`)
+    const interval = setInterval(() => {
+      setBaseAngle((prev) => (prev + 0.6) % 360);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [activeDragItem]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -433,22 +461,22 @@ export default function MixologyGame({ question, onSelect }) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex-1 flex flex-col items-center justify-between px-3 pt-2 pb-10 gap-4 select-none w-full max-w-4xl mx-auto font-['Prompt']">
+      <div className="flex-1 flex flex-col items-center justify-between px-3 pt-1 pb-8 gap-4 select-none w-full max-w-4xl mx-auto font-['Prompt']">
         
-        {/* Header Title */}
+        {/* Header Title (Clean Minimal Luxury) */}
         <div className="text-center w-full px-2 z-30">
-          <div className="inline-block bg-[#0b132b]/95 border border-[#d4af37]/60 rounded-full px-5 py-1.5 shadow-md mb-2">
-            <span className="font-['Cinzel'] text-[#d4af37] text-xs sm:text-sm tracking-[0.2em] uppercase font-bold">
-              ✨ ORBITAL BOTANICAL ALCHEMY · MULTI-INFUSION ✨
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-[#f8fafc]/85 m-0 font-light max-w-lg mx-auto">
-            กดคลิก หรือ ลากวัตถุดิบลอยตัวรอบๆ โหลแก้ว (Surrounding Botanicals) ลงโถแก้วใสเบญจรงค์ตรงกลาง เพื่อปรุงสูตรลับเฉพาะคุณ
+          <h3 className="font-['Cinzel'] text-base sm:text-lg text-[#fef08a] tracking-[0.18em] font-bold uppercase m-0">
+            {lang === 'en' ? 'BOTANICAL INFUSION' : 'สกัดเอสเซนส์สมุนไพร'}
+          </h3>
+          <p className="text-xs sm:text-sm text-[#f8fafc]/80 m-0 font-light mt-1 max-w-md mx-auto">
+            {lang === 'en'
+              ? 'Tap or drag botanicals into the crystal decanter.'
+              : 'แตะเลือกหรือลากสมุนไพรลงในโถคริสตัล'}
           </p>
         </div>
 
         {/* ── Orbital Floating Arena (Vessel Center + Surrounding Botanicals) ── */}
-        <div className="relative w-full h-[470px] sm:h-[510px] flex items-center justify-center my-1 max-w-3xl">
+        <div className="relative w-full h-[470px] sm:h-[510px] flex items-center justify-center my-1 max-w-3xl overflow-hidden">
           
           {/* Central Crystal Decanter (`โหลแก้วตรงกลาง`) */}
           <DroppableVesselZone
@@ -458,7 +486,7 @@ export default function MixologyGame({ question, onSelect }) {
             onClearAll={() => setDroppedItems([])}
           />
 
-          {/* Surrounding Orbital Floating Borderless Ingredients (`ลอยรอบๆ โหลแก้ว`) */}
+          {/* Surrounding Orbital Floating Borderless Ingredients (`ลอยเป็นวงกลมเรียงกัน`) */}
           {options.map((opt, idx) => {
             const isDropped = droppedItems.some((item) => item.id === opt.id);
             return (
@@ -469,6 +497,7 @@ export default function MixologyGame({ question, onSelect }) {
                 isDropped={isDropped}
                 onToggle={toggleItem}
                 total={options.length}
+                baseAngle={baseAngle}
               />
             );
           })}
@@ -487,7 +516,11 @@ export default function MixologyGame({ question, onSelect }) {
                 onClick={handleConfirmAlchemy}
                 className="w-full bg-gradient-to-r from-[#047857] via-[#043927] to-[#d4af37] border-2 border-[#fef08a] text-white font-['Cinzel'] font-bold py-4 px-6 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.4)] tracking-[0.2em] uppercase transition-all hover:brightness-110 flex items-center justify-center gap-3 text-sm sm:text-base cursor-pointer"
               >
-                <span>⚱️ CONFIRM ALCHEMY ({droppedItems.length} INGREDIENTS)</span>
+                <span>
+                  {lang === 'en'
+                    ? `⚱️ CONFIRM ALCHEMY (${droppedItems.length} INGREDIENTS)`
+                    : `⚱️ ยืนยันการปรุงสูตรลับ (${droppedItems.length} ชนิด)`}
+                </span>
                 <span>✨</span>
               </button>
             </motion.div>

@@ -16,7 +16,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 const GOLD = '#d4af37';
 const GOLD_LIGHT = '#fef08a';
@@ -30,6 +31,7 @@ const CARD_THEMES = [
     mythEmoji:  '🐍',
     charName:   'THE ROYAL NAGA',
     charThai:   'พญานาคราช · ผู้พิทักษ์แห่งสายน้ำ',
+    charEn:     'The Royal Naga · Guardian of Sacred Waters',
   },
   {
     yant:       'wheel',
@@ -39,6 +41,7 @@ const CARD_THEMES = [
     mythEmoji:  '🦅',
     charName:   'CELESTIAL GARUDA',
     charThai:   'พญาครุฑสุบรรณ · เจ้าแห่งเวหา',
+    charEn:     'Celestial Garuda · Lord of the Heavens',
   },
   {
     yant:       'triangle',
@@ -48,6 +51,7 @@ const CARD_THEMES = [
     mythEmoji:  '🪷',
     charName:   'SACRED LOTUS',
     charThai:   'ปทุมมาศ · รัตนบงกชสวรรค์',
+    charEn:     'Sacred Lotus · Celestial Golden Flower',
   },
 ];
 
@@ -144,6 +148,7 @@ function YantraGraphic({ yant, gold }) {
 
 // ─── Orbiting Divination Card Item (`การ์ดลอย หมุนรอบเป็นวงกลมเรียบต่อกัน`) ─────
 function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAngle }) {
+  const { lang, getLocalized } = useLanguage();
   const theme = CARD_THEMES[idx % CARD_THEMES.length];
   const isFlipped = flippedId === option.id;
   const isOtherFlipped = flippedId !== null && !isFlipped;
@@ -170,6 +175,10 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
   const xPos = isFlipped ? 0 : Math.round(Math.cos(rad) * radius);
   const yPos = isFlipped ? 0 : Math.round(Math.sin(rad) * (radius * 0.58));
   const zPos = isFlipped ? 100 : Math.round(Math.sin(rad) * 60);
+
+  const cardLabel = getLocalized(option, 'label') || option.label;
+  const tapText = lang === 'en' ? 'Tap to reveal destiny' : 'แตะเพื่อเปิดคำทำนาย';
+  const charSub = lang === 'en' ? (theme.charEn || theme.charThai) : theme.charThai;
 
   return (
     <motion.div
@@ -212,7 +221,7 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
               ✦ PATHWAY #{idx + 1} ✦
             </span>
             <span className="font-['Prompt'] text-[10px] text-[#d4af37] tracking-wider block mt-0.5">
-              แตะเพื่อเปิดคำทำนาย
+              {tapText}
             </span>
           </div>
         </div>
@@ -237,11 +246,11 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
               {theme.charName}
             </span>
             <p className="font-['Prompt'] text-[11px] text-[#fef08a] font-light mt-0.5 mb-2">
-              {theme.charThai}
+              {charSub}
             </p>
             <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mb-2.5" />
             <h4 className="font-['Prompt'] text-xs sm:text-sm text-[#f8fafc] font-light leading-snug m-0 line-clamp-3">
-              {option.label}
+              {cardLabel}
             </h4>
           </div>
 
@@ -265,6 +274,7 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function TarotGame({ question, onSelect }) {
+  const { lang, getLocalized } = useLanguage();
   const options = question?.options || [];
   const [flippedId, setFlippedId] = useState(null);
   const [baseAngle, setBaseAngle] = useState(0);
@@ -292,20 +302,15 @@ export default function TarotGame({ question, onSelect }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-between px-3 pt-2 pb-10 gap-4 select-none w-full max-w-4xl mx-auto font-['Prompt'] overflow-hidden">
       
-      {/* Header Instruction */}
+      {/* Header Title (Clean Minimal Luxury) */}
       <div className="text-center w-full px-2 z-30">
-        <div className="inline-block bg-[#0b132b]/95 border border-[#d4af37]/60 rounded-full px-5 py-1.5 shadow-md mb-2">
-          <span className="font-['Cinzel'] text-[#d4af37] text-xs tracking-[0.22em] uppercase font-bold">
-            ✨ CIRCULAR WHEEL OF DESTINY · ROTATING TAROT ✨
-          </span>
-        </div>
-        <h3 className="font-['Cinzel'] text-base sm:text-lg text-[#fef08a] tracking-[0.16em] font-bold uppercase m-0">
-          {question?.content || 'CHOOSE YOUR SACRED PATHWAY'}
+        <h3 className="font-['Cinzel'] text-base sm:text-lg text-[#fef08a] tracking-[0.18em] font-bold uppercase m-0">
+          {getLocalized(question, 'content') || question?.content || 'SACRED DESTINY'}
         </h3>
-        <p className="font-['Prompt'] text-xs sm:text-sm text-[#f8fafc]/85 m-0 font-light mt-1">
+        <p className="text-xs sm:text-sm text-[#f8fafc]/80 m-0 font-light mt-1 max-w-md mx-auto">
           {flippedId === null
-            ? 'การ์ดยันต์มงคลกำลังลอยหมุนเป็นวงกลมรอบตัวคุณ... แดะคลิกเลือกการ์ดหนึ่งใบเพื่อเปิดคำทำนาย'
-            : '✦ การ์ดหยุดหมุน และกำลังเปิดเผยชะตากรรมแห่งเครื่องดื่มซิกเนเจอร์ของคุณ... ✦'}
+            ? (lang === 'en' ? 'Tap an orbiting card to reveal your destiny.' : 'แตะเลือกไพ่ยันต์มงคลหนึ่งใบเพื่อเปิดคำทำนาย')
+            : (lang === 'en' ? '✦ Revealing signature destiny... ✦' : '✦ กำลังเปิดเผยคำทำนาย... ✦')}
         </p>
       </div>
 

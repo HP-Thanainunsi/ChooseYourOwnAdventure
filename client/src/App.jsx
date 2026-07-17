@@ -1,36 +1,35 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import GameController from './components/GameController';
 import AdminPanel from './components/AdminPanel';
 import VintageOverlay from './components/VintageOverlay';
-
-function QuickNavToggle() {
-  const location = useLocation();
-  const isAdmin = location.pathname.startsWith('/admin');
-
-  return (
-    <div className="fixed top-3 right-3 z-[100]">
-      <Link
-        to={isAdmin ? '/' : '/admin'}
-        className="px-3 py-1.5 bg-[#1a1a1a]/85 hover:bg-[#1a1a1a] text-[#00f5ff] font-['Bangers'] tracking-wider text-sm border-2 border-[#00f5ff] rounded-lg shadow-[0_0_12px_rgba(0,245,255,0.4)] backdrop-blur transition-all flex items-center gap-1.5"
-      >
-        <span>{isAdmin ? '🎮 BACK TO GAME' : '⚙️ CMS ADMIN'}</span>
-      </Link>
-    </div>
-  );
-}
+import { LanguageProvider } from './context/LanguageContext';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="relative min-h-screen">
-        <VintageOverlay />
-        <QuickNavToggle />
-        <Routes>
-          <Route path="/admin/*" element={<AdminPanel />} />
-          <Route path="/*" element={<GameController />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <div className="relative min-h-screen bg-[#041410] flex flex-col justify-between overflow-x-hidden">
+          <VintageOverlay />
+          
+          {/* Locked Fixed Luxury Hotel Header */}
+          <Header />
+
+          {/* Main Content Area with padding so it never gets hidden by fixed header/footer */}
+          <main className="flex-1 pt-14 sm:pt-16 pb-10 w-full flex flex-col items-center">
+            <Routes>
+              <Route path="/admin/*" element={<AdminPanel />} />
+              <Route path="/*" element={<GameController />} />
+            </Routes>
+          </main>
+
+          {/* Locked Fixed Luxury Footer */}
+          <Footer />
+        </div>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
+
