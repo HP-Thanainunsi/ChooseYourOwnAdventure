@@ -18,8 +18,9 @@ import TarotGame    from './TarotGame';
 import DrinkResult  from './DrinkResult';
 import LoadingScreen from './LoadingScreen';
 import StoryScrollContainer from './StoryScrollContainer';
+import WelcomeScreen from './WelcomeScreen';
+import Header from './Header';
 
-// ─── Map question.type → React component ──────────────────────────────────────
 // ─── Map question.type → React component ──────────────────────────────────────
 const COMPONENT_MAP = {
   swipe:     SwipeGame,
@@ -39,6 +40,7 @@ const TYPE_META = {
 // ─── Game Status constants ────────────────────────────────────────────────────
 const STATUS = {
   LOADING:        'loading',
+  WELCOME:        'welcome',
   PLAYING:        'playing',
   LOADING_RESULT: 'loading_result',
   FINISHED:       'finished',
@@ -133,7 +135,7 @@ export default function GameController() {
       setPreloadProgress(100);
       setPreloadMsg('Sanctuary Ready! Welcome to Garden of Siam…');
       setTimeout(() => {
-        setGameStatus(STATUS.PLAYING);
+        setGameStatus(STATUS.WELCOME);
       }, 350);
     } catch (err) {
       setError(err.message);
@@ -188,19 +190,30 @@ export default function GameController() {
     return <LoadingScreen message={preloadMsg || "Welcome to Garden of Siam…"} progressPercent={preloadProgress} />;
   }
 
+  // ─── Render: Welcome / Home Landing (`หน้าแรกหลังจาก Preload เกม รายละเอียด Header + จุดที่น่าสนใจในกรุงเทพ + ปุ่ม Start`) ───
+  if (gameStatus === STATUS.WELCOME) {
+    return <WelcomeScreen onStart={() => setGameStatus(STATUS.PLAYING)} />;
+  }
+
   // ─── Render: Calculating result ───────────────────────────────────────────────
   if (gameStatus === STATUS.LOADING_RESULT) {
     return <LoadingScreen message="Our Head Mixologist is crafting your signature cocktail…" mystical />;
   }
 
-  // ─── Render: Finished — show drink result ────────────────────────────────────
+  // ─── Render: Finished — show drink result (with fixed Header at top) ──────────
   if (gameStatus === STATUS.FINISHED) {
-    return <DrinkResult result={result} onRestart={handleRestart} />;
+    return (
+      <div className="w-full min-h-screen bg-[#041410] pt-14 sm:pt-16">
+        <Header />
+        <DrinkResult result={result} onRestart={handleRestart} />
+      </div>
+    );
   }
 
-  // ─── Render: Playing (Scrollytelling 3D Parallax Flow) ───────────────────────
+  // ─── Render: Playing (`Chambers 1-3` with fixed Header at top) ────────────────
   return (
-    <main className="min-h-screen w-full bg-[#041410]">
+    <div className="w-full min-h-screen bg-[#041410] pt-14 sm:pt-16">
+      <Header />
       <StoryScrollContainer
         questions={questions}
         userSelections={userSelections}
@@ -213,6 +226,6 @@ export default function GameController() {
           submitResult(finalSelections);
         }}
       />
-    </main>
+    </div>
   );
 }

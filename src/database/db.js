@@ -11,6 +11,7 @@
 'use strict';
 
 const path = require('node:path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const fs   = require('node:fs');
 const { createClient } = require('@libsql/client');
 
