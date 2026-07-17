@@ -9,13 +9,19 @@
 
 const { Router } = require('express');
 const multer = require('multer');
-const { getGameFlow, calculateResult, uploadPhoto } = require('../controllers/gameController');
+const { getAttractions, getGameFlow, calculateResult, uploadPhoto } = require('../controllers/gameController');
 
 const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
 });
+
+/**
+ * GET /api/attractions
+ * Returns all attractions (including Garden of Siam) from TURSO.
+ */
+router.get('/attractions', getAttractions);
 
 /**
  * GET /api/game-flow

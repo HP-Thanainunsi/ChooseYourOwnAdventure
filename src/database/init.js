@@ -27,7 +27,21 @@ async function createSchema(db) {
       address_en       TEXT,
       latitude         REAL    NOT NULL,
       longitude        REAL    NOT NULL,
-      google_maps_link TEXT    NOT NULL
+      google_maps_link TEXT    NOT NULL,
+      image_url        TEXT
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS Attractions (
+      id          TEXT PRIMARY KEY,
+      title_th    TEXT NOT NULL,
+      title_en    TEXT NOT NULL,
+      subtitle_th TEXT NOT NULL,
+      subtitle_en TEXT NOT NULL,
+      image_url   TEXT NOT NULL,
+      tag_th      TEXT NOT NULL,
+      tag_en      TEXT NOT NULL
     )
   `);
 
@@ -54,6 +68,7 @@ async function createSchema(db) {
   try { await db.run(`ALTER TABLE Drinks ADD COLUMN description_en TEXT`); } catch (_e) {}
   try { await db.run(`ALTER TABLE Locations ADD COLUMN name_en TEXT`); } catch (_e) {}
   try { await db.run(`ALTER TABLE Locations ADD COLUMN address_en TEXT`); } catch (_e) {}
+  try { await db.run(`ALTER TABLE Locations ADD COLUMN image_url TEXT`); } catch (_e) {}
 
   // ─── GameStages (formerly Questions) ────────────────────────────────────────
   await db.run(`
@@ -103,54 +118,150 @@ async function seedData(db, forceReset = false) {
   const locExisting = await queryOne(db, 'SELECT COUNT(*) AS n FROM Locations');
   if (forceReset || !locExisting || Number(locExisting.n) === 0) {
     await db.run(
-      `INSERT INTO Locations (id, name, name_en, address, address_en, latitude, longitude, google_maps_link)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Locations (id, name, name_en, address, address_en, latitude, longitude, google_maps_link, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         1,
         'Garden of Siam — The Grand Teak Lounge',
         'Garden of Siam — The Grand Teak Lounge',
         '48 Oriental Avenue, Bang Rak, กรุงเทพมหานคร 10500',
         '48 Oriental Avenue, Bang Rak, Bangkok 10500',
-        13.7240, 100.5140, 'https://maps.app.goo.gl/MandarinOrientalBangkok'
+        13.7240, 100.5140, 'https://maps.app.goo.gl/MandarinOrientalBangkok',
+        '/images/stages/garden-of-siam.png'
       ]
     );
 
     await db.run(
-      `INSERT INTO Locations (id, name, name_en, address, address_en, latitude, longitude, google_maps_link)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Locations (id, name, name_en, address, address_en, latitude, longitude, google_maps_link, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         2,
         'The Sanctuary Speakeasy at Garden of Siam',
         'The Sanctuary Speakeasy at Garden of Siam',
         'ซอยนายเลิศ ถนนวิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330',
         'Soi Nai Lert, Wireless Road, Pathum Wan, Bangkok 10330',
-        13.7432, 100.5475, 'https://maps.app.goo.gl/SanctuarySpeakeasyBangkok'
+        13.7432, 100.5475, 'https://maps.app.goo.gl/SanctuarySpeakeasyBangkok',
+        '/images/stages/stage2_courtyard_bg.png'
       ]
     );
 
     await db.run(
-      `INSERT INTO Locations (id, name, name_en, address, address_en, latitude, longitude, google_maps_link)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Locations (id, name, name_en, address, address_en, latitude, longitude, google_maps_link, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         3,
         'The Moonlight Promenade Bar',
         'The Moonlight Promenade Bar',
         '152 ถนนวิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330',
         '152 Wireless Rd, Lumphini, Pathum Wan, Bangkok 10330',
-        13.7360, 100.5478, 'https://maps.app.goo.gl/MoonlightPromenadeBangkok'
+        13.7360, 100.5478, 'https://maps.app.goo.gl/MoonlightPromenadeBangkok',
+        '/images/stages/stage1_lobby_bg.png'
       ]
     );
     console.log('📍  Seeded 3 Luxury Hotel Bar Locations with Bilingual support.');
+  } else {
+    try {
+      await db.run(
+        `UPDATE Locations SET name = ?, name_en = ?, address = ?, address_en = ?, google_maps_link = ?, image_url = ? WHERE id = 1`,
+        [
+          'Garden of Siam — The Grand Teak Lounge',
+          'Garden of Siam — The Grand Teak Lounge',
+          '48 Oriental Avenue, Bang Rak, กรุงเทพมหานคร 10500',
+          '48 Oriental Avenue, Bang Rak, Bangkok 10500',
+          'https://maps.app.goo.gl/MandarinOrientalBangkok',
+          '/images/stages/garden-of-siam.png'
+        ]
+      );
+      await db.run(
+        `UPDATE Locations SET name = ?, name_en = ?, address = ?, address_en = ?, google_maps_link = ?, image_url = ? WHERE id = 2`,
+        [
+          'The Sanctuary Speakeasy at Garden of Siam',
+          'The Sanctuary Speakeasy at Garden of Siam',
+          'ซอยนายเลิศ ถนนวิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330',
+          'Soi Nai Lert, Wireless Road, Pathum Wan, Bangkok 10330',
+          'https://maps.app.goo.gl/SanctuarySpeakeasyBangkok',
+          '/images/stages/stage2_courtyard_bg.png'
+        ]
+      );
+      await db.run(
+        `UPDATE Locations SET name = ?, name_en = ?, address = ?, address_en = ?, google_maps_link = ?, image_url = ? WHERE id = 3`,
+        [
+          'The Moonlight Promenade Bar',
+          'The Moonlight Promenade Bar',
+          '152 ถนนวิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330',
+          '152 Wireless Rd, Lumphini, Pathum Wan, Bangkok 10330',
+          'https://maps.app.goo.gl/MoonlightPromenadeBangkok',
+          '/images/stages/stage1_lobby_bg.png'
+        ]
+      );
+      console.log('📍  Synced & updated 3 Luxury Hotel Bar Locations on TURSO.');
+    } catch (_e) {}
   }
 
-  // Idempotent: check if Drinks already seeded
+  // Always UPSERT Attractions (`Garden of Siam` & Bangkok Landmarks) onto TURSO
+  await db.run(
+    `INSERT OR REPLACE INTO Attractions (id, title_th, title_en, subtitle_th, subtitle_en, image_url, tag_th, tag_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      'grand-palace',
+      'พระบรมมหาราชวัง & วัดพระศรีรัตนศาสดาราม',
+      'Grand Palace & Wat Phra Kaew',
+      'มรดกความงามคู่บ้านคู่เมือง สถาปัตยกรรมไทยชั้นยอดที่ส่องประกายสีทองอร่าม',
+      'The sacred heart of Siam, showcasing majestic golden spires and exquisite royal architecture.',
+      '/images/stages/morning-bangkok.png',
+      'ประวัติศาสตร์ & ศิลปะชั้นสูง',
+      'ROYAL HERITAGE'
+    ]
+  );
+  await db.run(
+    `INSERT OR REPLACE INTO Attractions (id, title_th, title_en, subtitle_th, subtitle_en, image_url, tag_th, tag_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      'wat-arun',
+      'วัดอรุณราชวราราม ยามอัสดงริมเจ้าพระยา',
+      'Wat Arun · Temple of Dawn Reflections',
+      'พระปรางค์ประดับกระเบื้องเคลือบเบญจรงค์ สัญลักษณ์แห่งความงามเหนือกาลเวลาฝั่งธนบุรี',
+      'Iconic porcelain-encrusted prang standing gracefully by the Chao Phraya River at twilight.',
+      '/images/stages/nana-speakeasy.png',
+      'สถาปัตยกรรมริมน้ำ',
+      'ICONIC LANDMARK'
+    ]
+  );
+  await db.run(
+    `INSERT OR REPLACE INTO Attractions (id, title_th, title_en, subtitle_th, subtitle_en, image_url, tag_th, tag_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      'mahanakhon-skybar',
+      'มหานครสกายบาร์ & แสงสียามราตรี',
+      'Mahanakhon SkyBar & Modern Skyline',
+      'จุดชมวิวระดับท็อป 360 องศา สัมผัสมนต์เสน่ห์แห่งมหานครที่ไม่เคยหลับใหล',
+      'Bangkok’s architectural pinnacle offering panoramic rooftop cocktails above the glittering clouds.',
+      '/images/stages/sukhumvit-bts.png',
+      'ไลฟ์สไตล์เหนือระดับ',
+      'ROOFTOP LUXURY'
+    ]
+  );
+  await db.run(
+    `INSERT OR REPLACE INTO Attractions (id, title_th, title_en, subtitle_th, subtitle_en, image_url, tag_th, tag_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      'garden-of-siam',
+      'สวนสวรรค์พฤกษาแห่งสยาม & บาร์ลับห้าดาว',
+      'Garden of Siam · 5-Star Speakeasy Bar',
+      'โอเอซิสส่วนตัวใจกลางเมือง รังสรรค์เครื่องดื่มเฉพาะบุคคลจากเอสเซนส์สมุนไพรไทยโบราณ',
+      'An intimate botanical sanctuary crafting personalized alchemy from rare Thai herbs & royal elixirs.',
+      '/images/stages/garden-of-siam.png',
+      'ประสบการณ์ค็อกเทลลับ',
+      'SIGNATURE SANCTUARY'
+    ]
+  );
+  console.log('🏛️  Synced & Seeded 4 Bangkok & Garden of Siam Attractions onto TURSO.');
+
+  // Idempotent: check if Drinks already seeded or sync them
   const drinksExisting = await queryOne(db, 'SELECT COUNT(*) AS n FROM Drinks');
   if (forceReset || !drinksExisting || Number(drinksExisting.n) === 0) {
     if (forceReset) await db.run('DELETE FROM Drinks');
     await db.run(
-      `INSERT INTO Drinks (name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Drinks (id, name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        1,
         'Flawless Crystal Coupe Cocktail',
         'Flawless Crystal Coupe Cocktail',
         'ค็อกเทลคริสตัลใสบริสุทธิ์สีทองอำพันในแก้วคูปหรูหรา ประดับแผ่นทองคำเปลวบริสุทธิ์และกล้วยไม้ขาวสะท้อนแสงไฟ รสชาติกลมกล่อมละเมียดละไม มอบความรู้สึกสงบนิ่งและมีระดับขั้นสุด',
@@ -164,9 +275,10 @@ async function seedData(db, forceReset = false) {
     );
 
     await db.run(
-      `INSERT INTO Drinks (name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Drinks (id, name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        2,
         'Moonlight Botanical Fizz',
         'Moonlight Botanical Fizz',
         'เครื่องดื่มสปาร์คกลิ้งพฤกษาสูตรลับ ผสมผสานสมุนไพรราชสำนักและกลิ่นหอมของดอกมะลิตุ๊ดตู่สกัดเย็น ท็อปด้วยไอหมอกแชมเปญซาบซ่า เหมาะสำหรับจิตวิญญาณผู้รักความท้าทายและหลงใหลในความลึกลับของสวนเขตร้อนยามราตรี',
@@ -180,9 +292,10 @@ async function seedData(db, forceReset = false) {
     );
 
     await db.run(
-      `INSERT INTO Drinks (name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Drinks (id, name, name_en, description, description_en, image_url, min_score, max_score, abv, sweetness, location_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        3,
         'Royal Siam Smoked Teak Old Fashioned',
         'Royal Siam Smoked Teak Old Fashioned',
         'ค็อกเทลทรงพลังและสง่างาม รมควันด้วยถ่านไม้สักทองโบราณและเปลือกอบเชยป่า ให้รสสัมผัสลึกล้ำ ดุดัน และทรงเสน่ห์ รังสรรค์ขึ้นเฉพาะสำหรับผู้นำผู้ชื่นชอบความซับซ้อนและเปี่ยมด้วยเอกลักษณ์เฉพาะตัว',
@@ -196,7 +309,42 @@ async function seedData(db, forceReset = false) {
     );
     console.log('🍹  Seeded 3 Luxury Signature Cocktails with Bilingual text.');
   } else {
-    console.log('⏭   Drinks seed data already present.');
+    try {
+      await db.run(
+        `UPDATE Drinks SET name = ?, name_en = ?, description = ?, description_en = ?, image_url = ?, location_id = ? WHERE id = 1`,
+        [
+          'Flawless Crystal Coupe Cocktail',
+          'Flawless Crystal Coupe Cocktail',
+          'ค็อกเทลคริสตัลใสบริสุทธิ์สีทองอำพันในแก้วคูปหรูหรา ประดับแผ่นทองคำเปลวบริสุทธิ์และกล้วยไม้ขาวสะท้อนแสงไฟ รสชาติกลมกล่อมละเมียดละไม มอบความรู้สึกสงบนิ่งและมีระดับขั้นสุด',
+          'A flawless, crystal-clear coupe glass filled with a premium signature cocktail, glowing slightly in amber tones. Garnished with a delicate edible gold leaf and a single floating white orchid. Exclusively designed for the refined soul seeking serenity and timeless elegance.',
+          '/images/drinks/crystal-coupe.png',
+          2
+        ]
+      );
+      await db.run(
+        `UPDATE Drinks SET name = ?, name_en = ?, description = ?, description_en = ?, image_url = ?, location_id = ? WHERE id = 2`,
+        [
+          'Moonlight Botanical Fizz',
+          'Moonlight Botanical Fizz',
+          'เครื่องดื่มสปาร์คกลิ้งพฤกษาสูตรลับ ผสมผสานสมุนไพรราชสำนักและกลิ่นหอมของดอกมะลิตุ๊ดตู่สกัดเย็น ท็อปด้วยไอหมอกแชมเปญซาบซ่า เหมาะสำหรับจิตวิญญาณผู้รักความท้าทายและหลงใหลในความลึกลับของสวนเขตร้อนยามราตรี',
+          'A vibrant and aromatic elixir infused with rare royal herbs and night-blooming jasmine, topped with effervescent champagne mist. Perfect for the adventurous spirit who delights in the mysteries of the tropical garden under moonlight.',
+          '/images/drinks/botanical-fizz.png',
+          3
+        ]
+      );
+      await db.run(
+        `UPDATE Drinks SET name = ?, name_en = ?, description = ?, description_en = ?, image_url = ?, location_id = ? WHERE id = 3`,
+        [
+          'Royal Siam Smoked Teak Old Fashioned',
+          'Royal Siam Smoked Teak Old Fashioned',
+          'ค็อกเทลทรงพลังและสง่างาม รมควันด้วยถ่านไม้สักทองโบราณและเปลือกอบเชยป่า ให้รสสัมผัสลึกล้ำ ดุดัน และทรงเสน่ห์ รังสรรค์ขึ้นเฉพาะสำหรับผู้นำผู้ชื่นชอบความซับซ้อนและเปี่ยมด้วยเอกลักษณ์เฉพาะตัว',
+          'Deep, powerful, and majestic. Crafted with rare aged spirits smoked over teakwood embers and spiced with wild cinnamon. An unapologetically bold creation reserved for leaders who appreciate unmatched complexity and heritage.',
+          '/images/drinks/smoked-teak.png',
+          1
+        ]
+      );
+      console.log('🍹  Synced & updated 3 Luxury Signature Cocktails on TURSO.');
+    } catch (_e) {}
   }
 
   // Idempotent: check if GameStages already seeded
@@ -283,7 +431,7 @@ async function seedData(db, forceReset = false) {
         'เมื่อเดินลัดเลาะมาสุดปลายสวนมรกต คุณจะพบกับบานประตูไม้สักโบราณแกะสลักลวดลายไทยสุดประณีตขนาดใหญ่ (The Hidden Sanctu-Bar) เสียงดนตรีแจ๊ซนุ่มๆ ลอยรอดออกมาผ่านช่องประตู บนโต๊ะหินอ่อนสีดำสนิท มีถาดกำมะหยี่สีเขียวมรกตวาง "กุญแจทองเหลืองโบราณ 3 ดอก" (Vintage Brass Keys) เพื่อให้คุณเลือกไขเข้าสู่โซนลับและปลดล็อก Signature Cocktail ประจำดวงชะตาของค่ำคืนนี้... เลือกกุญแจของคุณได้เลย!',
         'At the far end of the emerald garden stands a majestic carved antique teakwood door (The Hidden Sanctu-Bar). Soft acoustic jazz drifts through the brass keyhole. On a polished black marble table rests a velvet tray displaying three Vintage Brass Keys to unlock your sanctuary signature cocktail... Choose your sacred key!',
         'tarot',
-        '/images/stages/stage3_door_bg.png'
+        '/images/stages/stage3_tarot_bg.png'
       ]
     );
 
@@ -317,7 +465,12 @@ async function seedData(db, forceReset = false) {
 
     console.log('✅  Luxury Garden of Siam 5-Star Hotel Bar storyline seeded with Bilingual text.');
   } else {
-    console.log('⏭   GameStages already seeded.');
+    try {
+      await db.run(`UPDATE GameStages SET background_image_url = '/images/stages/stage1_lobby_bg.png' WHERE step_order = 1`);
+      await db.run(`UPDATE GameStages SET background_image_url = '/images/stages/stage2_courtyard_bg.png' WHERE step_order = 2`);
+      await db.run(`UPDATE GameStages SET background_image_url = '/images/stages/stage3_tarot_bg.png' WHERE step_order = 3`);
+      console.log('🏛️  Synced 3 Luxury Garden of Siam background images to GameStages on TURSO.');
+    } catch (_e) {}
   }
 }
 

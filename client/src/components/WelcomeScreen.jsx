@@ -14,61 +14,13 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
-const BANGKOK_ATTRACTIONS = [
-  {
-    id: 'grand-palace',
-    titleTh: 'พระบรมมหาราชวัง & วัดพระศรีรัตนศาสดาราม',
-    titleEn: 'Grand Palace & Wat Phra Kaew',
-    subtitleTh: 'มรดกความงามคู่บ้านคู่เมือง สถาปัตยกรรมไทยชั้นยอดที่ส่องประกายสีทองอร่าม',
-    subtitleEn: 'The sacred heart of Siam, showcasing majestic golden spires and exquisite royal architecture.',
-    image: '/images/stages/morning-bangkok.png',
-    fallbackIcon: '🏛️',
-    tagTh: 'ประวัติศาสตร์ & ศิลปะชั้นสูง',
-    tagEn: 'ROYAL HERITAGE',
-  },
-  {
-    id: 'wat-arun',
-    titleTh: 'วัดอรุณราชวราราม ยามอัสดงริมเจ้าพระยา',
-    titleEn: 'Wat Arun · Temple of Dawn Reflections',
-    subtitleTh: 'พระปรางค์ประดับกระเบื้องเคลือบเบญจรงค์ สัญลักษณ์แห่งความงามเหนือกาลเวลาฝั่งธนบุรี',
-    subtitleEn: 'Iconic porcelain-encrusted prang standing gracefully by the Chao Phraya River at twilight.',
-    image: '/images/stages/nana-speakeasy.png',
-    fallbackIcon: '🌅',
-    tagTh: 'สถาปัตยกรรมริมน้ำ',
-    tagEn: 'ICONIC LANDMARK',
-  },
-  {
-    id: 'mahanakhon-skybar',
-    titleTh: 'มหานครสกายบาร์ & แสงสียามราตรี',
-    titleEn: 'Mahanakhon SkyBar & Modern Skyline',
-    subtitleTh: 'จุดชมวิวระดับท็อป 360 องศา สัมผัสมนต์เสน่ห์แห่งมหานครที่ไม่เคยหลับใหล',
-    subtitleEn: 'Bangkok’s architectural pinnacle offering panoramic rooftop cocktails above the glittering clouds.',
-    image: '/images/stages/sukhumvit-bts.png',
-    fallbackIcon: '🏙️',
-    tagTh: 'ไลฟ์สไตล์เหนือระดับ',
-    tagEn: 'ROOFTOP LUXURY',
-  },
-  {
-    id: 'garden-of-siam',
-    titleTh: 'สวนสวรรค์พฤกษาแห่งสยาม & บาร์ลับห้าดาว',
-    titleEn: 'Garden of Siam · 5-Star Speakeasy Bar',
-    subtitleTh: 'โอเอซิสส่วนตัวใจกลางเมือง รังสรรค์เครื่องดื่มเฉพาะบุคคลจากเอสเซนส์สมุนไพรไทยโบราณ',
-    subtitleEn: 'An intimate botanical sanctuary crafting personalized alchemy from rare Thai herbs & royal elixirs.',
-    image: '/images/drinks/crystal-coupe.png',
-    fallbackIcon: '🍸',
-    tagTh: 'ประสบการณ์ค็อกเทลลับ',
-    tagEn: 'SIGNATURE SANCTUARY',
-  },
-];
-
 export default function WelcomeScreen({ onStart }) {
   const { lang, toggleLang } = useLanguage();
-  const [activeTab, setActiveTab] = useState(0);
 
   return (
     <div className="relative w-full min-h-screen bg-gradient-to-b from-[#041410] via-[#06241c] to-[#041410] text-[#f8fafc] flex flex-col justify-between overflow-x-hidden pt-4 pb-12 px-4 sm:px-6 lg:px-12 font-['Prompt'] select-none">
@@ -161,69 +113,12 @@ export default function WelcomeScreen({ onStart }) {
             className="text-sm sm:text-base text-[#f8fafc]/80 max-w-2xl mx-auto font-light leading-relaxed"
           >
             {lang === 'en'
-              ? 'Embark on a curated sensory journey through Bangkok’s most celebrated landmarks before entering our secret lounge to discover your custom botanical elixir.'
-              : 'สำรวจจุดเช็คอินระดับตำนานของกรุงเทพมหานคร ก่อนก้าวสู่บาร์พฤกษาลับแห่งโรงแรม เพื่อรังสรรค์ค็อกเทลซิกเนเจอร์ที่สะท้อนตัวตนของคุณ'}
+              ? 'Step into our secret botanical sanctuary to discover your bespoke signature cocktail, crafted from rare Siamese herbs and golden royal infusions.'
+              : 'ก้าวสู่บาร์พฤกษาลับแห่งโรงแรมสยาม เพื่อรังสรรค์ค็อกเทลซิกเนเจอร์ที่สะท้อนตัวตนของคุณ จากเอสเซนส์สมุนไพรไทยและทองคำแท้'}
           </motion.p>
         </div>
 
-        {/* Bangkok Highlights Interactive Grid (`จุดที่น่าสนใจในกรุงเทพ`) */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"
-        >
-          {BANGKOK_ATTRACTIONS.map((item, idx) => {
-            const isSelected = activeTab === idx;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveTab(idx)}
-                className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border text-left ${
-                  isSelected
-                    ? 'border-[#fef08a] shadow-[0_0_30px_rgba(212,175,55,0.45)] scale-[1.02] bg-[#06241c]/90'
-                    : 'border-[#d4af37]/35 hover:border-[#d4af37]/80 bg-[#041410]/70 hover:bg-[#06241c]/60'
-                } backdrop-blur-xl flex flex-col justify-between p-4 min-h-[220px] sm:min-h-[260px]`}
-              >
-                {/* Image or High-End Gradient Icon Box */}
-                <div className="relative w-full h-32 sm:h-36 rounded-xl overflow-hidden mb-3 bg-[#021812] border border-[#d4af37]/30 flex items-center justify-center">
-                  <img
-                    src={item.image}
-                    alt={lang === 'en' ? item.titleEn : item.titleTh}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#041410] via-transparent to-transparent opacity-60" />
-                  <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-[#041410]/80 border border-[#d4af37]/60 font-['Cinzel'] text-[9px] sm:text-[10px] text-[#fef08a] font-bold tracking-wider uppercase shadow-md">
-                    {lang === 'en' ? item.tagEn : item.tagTh}
-                  </span>
-                </div>
-
-                {/* Card Title & Description */}
-                <div>
-                  <h3 className="font-['Playfair_Display'] text-sm sm:text-base font-bold text-[#fef08a] group-hover:text-white transition-colors leading-snug mb-1">
-                    {lang === 'en' ? item.titleEn : item.titleTh}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-[#f8fafc]/75 font-light leading-relaxed line-clamp-2 m-0">
-                    {lang === 'en' ? item.subtitleEn : item.subtitleTh}
-                  </p>
-                </div>
-
-                {/* Subtle Active Highlight Dot */}
-                {isSelected && (
-                  <div className="absolute bottom-2 right-3 flex items-center gap-1 text-[10px] text-[#d4af37] font-['Cinzel'] font-bold">
-                    <span>✦ ACTIVE</span>
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </motion.div>
-
-        {/* ── 3. PROMINENT START BUTTON (`มีปุ่ม Start กดปุ่ม Start ค่อยเริ่มเกม`) ── */}
+        {/* ── 2. PROMINENT START BUTTON (`มีปุ่ม Start กดปุ่ม Start ค่อยเริ่มเกม`) ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

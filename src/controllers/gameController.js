@@ -20,6 +20,27 @@ const { getDb, queryAll, queryOne } = require('../database/db');
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Returns all attractions (Bangkok Landmarks + Garden of Siam) directly from TURSO database.
+ */
+async function getAttractions(req, res) {
+  try {
+    const db = getDb();
+    const rows = await queryAll(db,
+      `SELECT id, title_th, title_en, subtitle_th, subtitle_en, image_url, tag_th, tag_en
+       FROM   Attractions
+       ORDER  BY rowid ASC`
+    );
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  } catch (err) {
+    console.error('[getAttractions error]', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
  * Returns all questions with nested options.
  * score_weight is EXCLUDED from the SELECT — it never leaves the server.
  *
@@ -166,7 +187,7 @@ async function calculateResult(req, res) {
     let location = null;
     if (drink.location_id) {
       location = await queryOne(db,
-        `SELECT id, name, name_en, address, address_en, latitude, longitude, google_maps_link
+        `SELECT id, name, name_en, address, address_en, latitude, longitude, google_maps_link, image_url
          FROM   Locations
          WHERE  id = ?`,
         [drink.location_id]
@@ -219,5 +240,5 @@ function uploadPhoto(req, res) {
   }
 }
 
-module.exports = { getGameFlow, calculateResult, uploadPhoto };
+module.exports = { getAttractions, getGameFlow, calculateResult, uploadPhoto };
 

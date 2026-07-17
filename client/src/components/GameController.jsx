@@ -10,7 +10,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import SwipeGame    from './SwipeGame';
 import MixologyGame from './MixologyGame';
@@ -50,18 +50,14 @@ export default function GameController() {
   // ── Core game state ─────────────────────────────────────────────────────────
   const [questions,      setQuestions]      = useState([]);
   const [userSelections, setUserSelections] = useState([]);   // array of selected option IDs
-  const [gameStatus,     setGameStatus]     = useState(STATUS.LOADING);
+  const [gameStatus,     setGameStatus]     = useState(STATUS.WELCOME);
   const [result,         setResult]         = useState(null);
   const [error,          setError]          = useState(null);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [preloadMsg,     setPreloadMsg]     = useState('Connecting to Garden of Siam Sanctuary…');
 
-  // ── Fetch game flow on mount ─────────────────────────────────────────────────
-  useEffect(() => {
-    fetchGameFlow();
-  }, []);
-
-  async function fetchGameFlow() {
+  // ── Start Game & Preload when user clicks START on Welcome Page ─────────────
+  async function handleStartGame() {
     setError(null);
     setGameStatus(STATUS.LOADING);
     setPreloadProgress(15);
@@ -75,12 +71,12 @@ export default function GameController() {
 
       // Collect all image URLs from stages and options
       const urls = new Set([
-        '/images/stages/morning-bangkok.png',
-        '/images/stages/sukhumvit-bts.png',
-        '/images/stages/nana-speakeasy.png',
-        '/images/drinks/sparkling-water.png',
-        '/images/drinks/tropical-smoothie.png',
-        '/images/drinks/dark-espresso.png',
+        '/images/stages/stage1_lobby_bg.png',
+        '/images/stages/stage2_courtyard_bg.png',
+        '/images/stages/stage3_tarot_bg.png',
+        '/images/drinks/crystal-coupe.png',
+        '/images/drinks/botanical-fizz.png',
+        '/images/drinks/smoked-teak.png',
       ]);
 
       if (Array.isArray(data.data)) {
@@ -133,13 +129,17 @@ export default function GameController() {
       );
 
       setPreloadProgress(100);
-      setPreloadMsg('Sanctuary Ready! Welcome to Garden of Siam…');
+      setPreloadMsg('Sanctuary Ready! Entering Chamber 1…');
       setTimeout(() => {
-        setGameStatus(STATUS.WELCOME);
+        setGameStatus(STATUS.PLAYING);
       }, 350);
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  async function fetchGameFlow() {
+    await handleStartGame();
   }
 
   // ── Submit all selections → calculate result ─────────────────────────────────
@@ -192,7 +192,7 @@ export default function GameController() {
 
   // ─── Render: Welcome / Home Landing (`หน้าแรกหลังจาก Preload เกม รายละเอียด Header + จุดที่น่าสนใจในกรุงเทพ + ปุ่ม Start`) ───
   if (gameStatus === STATUS.WELCOME) {
-    return <WelcomeScreen onStart={() => setGameStatus(STATUS.PLAYING)} />;
+    return <WelcomeScreen onStart={handleStartGame} />;
   }
 
   // ─── Render: Calculating result ───────────────────────────────────────────────
