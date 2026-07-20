@@ -422,6 +422,14 @@ async function seedData(db, forceReset = false) {
       `INSERT INTO Options (stage_id, label, label_en, image_url, score_weight) VALUES (?, ?, ?, ?, ?)`,
       [s2Id, 'กลีบบัวหลวงปทุม & น้ำค้างเกสรทองคำ (Royal Pink Lotus & Golden Pollen Dew — หอมหวานละเมียดละไม)', 'Royal Pink Lotus & Golden Pollen Dew (Ethereal, sweet & harmonious nectar)', '/images/options/royal-lotus.png', 1]
     );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, label_en, image_url, score_weight) VALUES (?, ?, ?, ?, ?)`,
+      [s2Id, 'ดอกอัญชันและตะไคร้หอม (Blue Butterfly Pea & Lemongrass — ลึกลับและสดชื่น)', 'Blue Butterfly Pea & Lemongrass (Mystical deep blue with refreshing zest)', '/images/options/butterfly-pea-lemongrass.png', 2]
+    );
+    await db.run(
+      `INSERT INTO Options (stage_id, label, label_en, image_url, score_weight) VALUES (?, ?, ?, ?, ?)`,
+      [s2Id, 'ขิงสดและโหระพาสยาม (Fresh Ginger & Siamese Basil — เผ็ดร้อนจัดจ้านทรงพลัง)', 'Fresh Ginger & Siamese Basil (Spicy, herbaceous, and intensely invigorating)', '/images/options/ginger-basil.png', 4]
+    );
 
     // ── Stage 3 – tarot (step_order: 3) • The Hidden Sanctu-Bar (The Destination) ──
     const s3Id = await runInsert(db,

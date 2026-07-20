@@ -27,7 +27,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useAnimationFrame, useTransform } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 
 // ─── Dynamic Botanical Color Palette & Fallback Icons ─────────────────────────
@@ -38,6 +38,8 @@ const PALETTE = [
   { color: '#fde047', glow: 'rgba(253, 224, 71, 0.6)', icon: '🍯', name: 'Cardamom & Wild Honey', nameTh: 'กระวานและน้ำผึ้งป่า', nameEn: 'Cardamom & Wild Honey' },
   { color: '#f43f5e', glow: 'rgba(244, 63, 94, 0.6)',  icon: '🌺', name: 'Royal Lotus Dew', nameTh: 'น้ำค้างเกสรบัวหลวง', nameEn: 'Royal Lotus Dew' },
   { color: '#a3e635', glow: 'rgba(163, 230, 53, 0.6)', icon: '🍋', name: 'Kaffir Lime Zest', nameTh: 'ผิวมะกรูดหอมระเหย', nameEn: 'Kaffir Lime Zest' },
+  { color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.6)', icon: '🪻', name: 'Butterfly Pea & Lemongrass', nameTh: 'ดอกอัญชันและตะไคร้หอม', nameEn: 'Butterfly Pea & Lemongrass' },
+  { color: '#f97316', glow: 'rgba(249, 115, 22, 0.6)', icon: '🍂', name: 'Fresh Ginger & Siamese Basil', nameTh: 'ขิงสดและโหระพาสยาม', nameEn: 'Fresh Ginger & Siamese Basil' },
 ];
 
 function getBotanicalTheme(idx = 0) {
@@ -295,14 +297,16 @@ function OrbitalFloatingItem({ option, themeIdx, isDropped, onToggle, total, bas
     data: { option, themeIdx, elixirColor: theme.color, icon: theme.icon },
   });
 
-  // Calculate circular coordinates orbiting around the center (`(0,0)` is decanter center)
-  const angle = (baseAngle + (themeIdx * (360 / total))) % 360;
-  const rad = (angle * Math.PI) / 180;
+  // Calculate circular coordinates orbiting around the center using MotionValues (`(0,0)` is decanter center)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const radiusX = isMobile ? 135 : 210;
   const radiusY = isMobile ? 155 : 190;
-  const orbitX = Math.round(Math.cos(rad) * radiusX);
-  const orbitY = Math.round(Math.sin(rad) * radiusY);
+  
+  // Transform the continuous baseAngle MotionValue into exact orbital X/Y pixels (0 React renders!)
+  const startAngle = themeIdx * (360 / Math.max(1, total));
+  const rad = useTransform(baseAngle, (angle) => ((angle + startAngle) * Math.PI) / 180);
+  const orbitX = useTransform(rad, (r) => Math.round(Math.cos(r) * radiusX));
+  const orbitY = useTransform(rad, (r) => Math.round(Math.sin(r) * radiusY));
 
   const label = getLocalized(option, 'label') || option.label;
   const botName = lang === 'en' ? (theme.nameEn || theme.name) : (theme.nameTh || theme.name);
@@ -323,9 +327,7 @@ function OrbitalFloatingItem({ option, themeIdx, isDropped, onToggle, total, bas
   // Inner wrapper drags directly with mouse (`ลากตามเมาส์`) and springs back (`กลับมาลอยอยู่ที่เดิม`) when canceled!
   return (
     <motion.div
-      style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: '-3.5rem', marginTop: '-3.5rem' }}
-      animate={{ x: orbitX, y: orbitY }}
-      transition={{ type: 'tween', duration: 0.05, ease: 'linear' }}
+      style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: '-3.5rem', marginTop: '-3.5rem', x: orbitX, y: orbitY }}
       className="z-30 pointer-events-auto"
     >
       <motion.div
@@ -395,16 +397,16 @@ export default function MixologyGame({ question, onSelect }) {
   const options = question?.options || [];
   const [droppedItems, setDroppedItems] = useState([]);
   const [activeDragItem, setActiveDragItem] = useState(null);
-  const [baseAngle, setBaseAngle] = useState(0);
 
-  // Continuous smooth orbital rotation around the decanter (`ลอยเป็นวงกลมเรียงกัน`)
-  useEffect(() => {
-    if (activeDragItem !== null) return; // Pause circle rotation right when user grabs an item (`ลอยตามเมาส์`)
-    const interval = setInterval(() => {
-      setBaseAngle((prev) => (prev + 0.6) % 360);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [activeDragItem]);
+  // 100% Smooth GPU-accelerated orbit without React re-rendering (Fixes stutter/overlap)
+  const baseAngle = useMotionValue(0);
+  const isDraggingAny = activeDragItem !== null;
+
+  useAnimationFrame((time, delta) => {
+    if (isDraggingAny) return; // Pause circle rotation right when user grabs an item
+    const current = baseAngle.get();
+    baseAngle.set((current + delta * 0.02) % 360);
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
