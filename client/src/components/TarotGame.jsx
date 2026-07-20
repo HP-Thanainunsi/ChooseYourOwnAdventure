@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -146,8 +146,8 @@ function YantraGraphic({ yant, gold }) {
   );
 }
 
-// ─── Orbiting Divination Card Item (`การ์ดลอย หมุนรอบเป็นวงกลมเรียบต่อกัน`) ─────
-function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAngle }) {
+// ─── Orbiting Divination Card Item (`การ์ดลอย หมุนรอบเป็นวงกลมเรียบต่อกัน แบบ GPU Accelerated`) ─────
+function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip }) {
   const { lang, getLocalized } = useLanguage();
   const theme = CARD_THEMES[idx % CARD_THEMES.length];
   const isFlipped = flippedId === option.id;
@@ -169,12 +169,22 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
     return () => clearInterval(interval);
   }, [isFlipped]);
 
-  // Calculate position on the circular orbit wheel (`R = 155px / 180px`)
-  const radius = 175;
-  const rad = (orbitAngle * Math.PI) / 180;
-  const xPos = isFlipped ? 0 : Math.round(Math.cos(rad) * radius);
-  const yPos = isFlipped ? 0 : Math.round(Math.sin(rad) * (radius * 0.58));
-  const zPos = isFlipped ? 100 : Math.round(Math.sin(rad) * 60);
+  // Pre-calculate 3D orbit keyframes once (Eliminates React State updates & mobile lag)
+  const { keyframesX, keyframesY, keyframesZ } = useMemo(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const radius = isMobile ? 140 : 175;
+    const yRadius = radius * 0.58;
+    const startAngle = idx * (360 / Math.max(1, total));
+    
+    const kx = [], ky = [], kz = [];
+    for (let i = 0; i <= 360; i += 5) {
+      const rad = ((startAngle + i) * Math.PI) / 180;
+      kx.push(Math.round(Math.cos(rad) * radius));
+      ky.push(Math.round(Math.sin(rad) * yRadius));
+      kz.push(Math.round(Math.sin(rad) * 60));
+    }
+    return { keyframesX: kx, keyframesY: ky, keyframesZ: kz };
+  }, [idx, total]);
 
   const cardLabel = getLocalized(option, 'label') || option.label;
   const tapText = lang === 'en' ? 'Tap to reveal destiny' : 'แตะเพื่อเปิดคำทำนาย';
@@ -183,24 +193,28 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
   return (
     <motion.div
       onClick={() => !isOtherFlipped && onFlip(option.id)}
-      animate={{
-        x: xPos,
-        y: yPos,
-        z: zPos,
-        scale: isFlipped ? 1.15 : isOtherFlipped ? 0.7 : 0.95,
-        opacity: isOtherFlipped ? 0.35 : 1,
-      }}
-      transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-      className={`absolute w-[210px] sm:w-[230px] h-[330px] sm:h-[355px] cursor-pointer select-none transition-all ${
+      animate={
+        isFlipped
+          ? { x: 0, y: 0, z: 100, scale: 1.15, opacity: 1 }
+          : isOtherFlipped
+          ? { scale: 0.7, opacity: 0.35 } // freeze movement, just scale down
+          : { x: keyframesX, y: keyframesY, z: keyframesZ, scale: 0.95, opacity: 1 }
+      }
+      transition={
+        isFlipped || isOtherFlipped
+          ? { type: 'spring', stiffness: 120, damping: 18 }
+          : { duration: 15, ease: 'linear', repeat: Infinity }
+      }
+      className={`absolute w-[190px] sm:w-[230px] h-[300px] sm:h-[355px] cursor-pointer select-none transition-all ${
         isOtherFlipped ? 'pointer-events-none' : 'hover:brightness-110'
       }`}
-      style={{ perspective: 1000, zIndex: isFlipped ? 50 : Math.round(zPos + 20) }}
+      style={{ perspective: 1000, zIndex: isFlipped ? 50 : 20 }}
     >
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.75, ease: 'easeInOut' }}
         style={{ transformStyle: 'preserve-3d' }}
-        className="relative w-full h-full rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.95)]"
+        className="relative w-full h-full rounded-3xl shadow-[0_20px_45px_rgba(0,0,0,0.85)]"
       >
         {/* ── CARD BACK (Gold Yantra Pattern) ── */}
         <div
@@ -208,19 +222,19 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
           className="absolute inset-0 rounded-3xl border-2 border-[#d4af37] p-4 flex flex-col items-center justify-between overflow-hidden shadow-inner"
         >
           <div className="w-full flex justify-between items-center opacity-85">
-            <span className="font-['Cinzel'] text-[10px] text-[#fef08a] tracking-widest font-bold">✦ DESTINY</span>
-            <span className="font-['Cinzel'] text-[10px] text-[#fef08a] font-bold">[{idx + 1}]</span>
+            <span className="font-['Cinzel'] text-[9px] sm:text-[10px] text-[#fef08a] tracking-widest font-bold">✦ DESTINY</span>
+            <span className="font-['Cinzel'] text-[9px] sm:text-[10px] text-[#fef08a] font-bold">[{idx + 1}]</span>
           </div>
 
-          <div className="w-32 h-32 sm:w-36 sm:h-36 my-auto filter drop-shadow-[0_10px_20px_rgba(212,175,55,0.4)]">
+          <div className="w-28 h-28 sm:w-36 sm:h-36 my-auto filter drop-shadow-[0_5px_15px_rgba(212,175,55,0.4)]">
             <YantraGraphic yant={theme.yant} gold={GOLD} />
           </div>
 
-          <div className="text-center w-full bg-[#041410]/80 border border-[#d4af37]/40 rounded-xl py-2 px-2 backdrop-blur-md">
-            <span className="font-['Cinzel'] text-[11px] text-[#fef08a] tracking-[0.16em] uppercase block font-semibold">
+          <div className="text-center w-full bg-[#041410]/80 border border-[#d4af37]/40 rounded-xl py-2 px-2 backdrop-blur-sm">
+            <span className="font-['Cinzel'] text-[10px] sm:text-[11px] text-[#fef08a] tracking-[0.16em] uppercase block font-semibold">
               ✦ PATHWAY #{idx + 1} ✦
             </span>
-            <span className="font-['Prompt'] text-[10px] text-[#d4af37] tracking-wider block mt-0.5">
+            <span className="font-['Prompt'] text-[9px] sm:text-[10px] text-[#d4af37] tracking-wider block mt-0.5">
               {tapText}
             </span>
           </div>
@@ -229,33 +243,33 @@ function OrbitingDivinationCard({ option, idx, total, flippedId, onFlip, orbitAn
         {/* ── CARD FRONT (Gold Foil Divination Reveal) ── */}
         <div
           style={{ background: theme.frontGrad, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
-          className="absolute inset-0 rounded-3xl border-2 border-[#fef08a] p-4 flex flex-col justify-between overflow-hidden shadow-[0_0_35px_rgba(254,240,138,0.35)]"
+          className="absolute inset-0 rounded-3xl border-2 border-[#fef08a] p-3 sm:p-4 flex flex-col justify-between overflow-hidden shadow-[0_0_25px_rgba(254,240,138,0.3)]"
         >
           <div className="bg-[#041410]/90 border border-[#d4af37]/60 rounded-xl px-3 py-1 flex items-center justify-between">
-            <span className="font-['Cinzel'] text-[10px] text-[#fef08a] font-bold tracking-widest">
+            <span className="font-['Cinzel'] text-[9px] sm:text-[10px] text-[#fef08a] font-bold tracking-widest">
               ✦ UNLOCKED DESTINY
             </span>
             <span className="text-sm">{theme.mythEmoji}</span>
           </div>
 
           <div className="flex flex-col items-center justify-center text-center my-auto px-1">
-            <div className="w-16 h-16 rounded-full bg-[#041410]/90 border border-[#d4af37] flex items-center justify-center text-3xl shadow-md mb-2.5">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#041410]/90 border border-[#d4af37] flex items-center justify-center text-2xl sm:text-3xl shadow-md mb-2">
               {theme.mythEmoji}
             </div>
-            <span className="font-['Cinzel'] text-xs text-[#d4af37] tracking-[0.18em] font-bold uppercase block">
+            <span className="font-['Cinzel'] text-[10px] sm:text-xs text-[#d4af37] tracking-[0.18em] font-bold uppercase block">
               {theme.charName}
             </span>
-            <p className="font-['Prompt'] text-[11px] text-[#fef08a] font-light mt-0.5 mb-2">
+            <p className="font-['Prompt'] text-[10px] sm:text-[11px] text-[#fef08a] font-light mt-0.5 mb-2">
               {charSub}
             </p>
-            <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mb-2.5" />
-            <h4 className="font-['Prompt'] text-xs sm:text-sm text-[#f8fafc] font-light leading-snug m-0 line-clamp-3">
+            <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mb-2.5" />
+            <h4 className="font-['Prompt'] text-[11px] sm:text-sm text-[#f8fafc] font-light leading-snug m-0 line-clamp-3">
               {cardLabel}
             </h4>
           </div>
 
           <div className="w-full pt-2 border-t border-[#d4af37]/30 flex flex-col gap-1.5">
-            <div className="flex justify-between items-center text-[10px] font-['Cinzel'] text-[#d4af37] font-semibold">
+            <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-['Cinzel'] text-[#d4af37] font-semibold">
               <span>✦ CONFIRMING...</span>
               <span>{Math.round(progress)}%</span>
             </div>
@@ -277,16 +291,6 @@ export default function TarotGame({ question, onSelect }) {
   const { lang, getLocalized } = useLanguage();
   const options = question?.options || [];
   const [flippedId, setFlippedId] = useState(null);
-  const [baseAngle, setBaseAngle] = useState(0);
-
-  // Continuous smooth orbital rotation (`หมุนรอบเป็นวงกลมเรียบต่อกัน`)
-  useEffect(() => {
-    if (flippedId !== null) return; // Pause spinning when a card is selected
-    const interval = setInterval(() => {
-      setBaseAngle((prev) => (prev + 0.6) % 360);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [flippedId]);
 
   function handleFlip(id) {
     if (flippedId !== null) return;
@@ -325,20 +329,16 @@ export default function TarotGame({ question, onSelect }) {
         </div>
 
         {/* Orbiting Cards */}
-        {options.map((opt, idx) => {
-          const orbitAngle = (idx * (360 / Math.max(1, options.length))) + baseAngle;
-          return (
-            <OrbitingDivinationCard
-              key={opt.id}
-              option={opt}
-              idx={idx}
-              total={options.length}
-              flippedId={flippedId}
-              onFlip={handleFlip}
-              orbitAngle={orbitAngle}
-            />
-          );
-        })}
+        {options.map((opt, idx) => (
+          <OrbitingDivinationCard
+            key={opt.id}
+            option={opt}
+            idx={idx}
+            total={options.length}
+            flippedId={flippedId}
+            onFlip={handleFlip}
+          />
+        ))}
       </div>
 
       {/* Bottom Hint */}

@@ -356,15 +356,18 @@ function OrbitalFloatingItem({ option, themeIdx, isDropped, onToggle, total, bas
       >
         {/* Borderless Image OR Glowing Botanical Icon (`png ไม่เอากรอบ ลอยรอบๆ`) */}
         <div className="relative w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 flex items-center justify-center mb-1 pointer-events-none">
+          {/* พื้นเงา (Base Shadow Glow) ใต้รูปภาพ */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 bg-black/45 rounded-full blur-[10px] shadow-[0_0_20px_10px_rgba(212,175,55,0.2)] z-0" />
+          
           {option.image_url ? (
             <img
               src={option.image_url}
               alt={label}
-              className="w-full h-full object-contain drop-shadow-[0_14px_24px_rgba(212,175,55,0.5)] filter"
+              className="relative w-full h-full object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.85)] filter z-10"
             />
           ) : (
             <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-2xl sm:text-3xl drop-shadow-[0_10px_20px_rgba(212,175,55,0.45)]"
+              className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-2xl sm:text-3xl drop-shadow-[0_10px_20px_rgba(212,175,55,0.45)] z-10"
               style={{ backgroundColor: 'rgba(4, 57, 39, 0.7)', border: `1px solid ${theme.color}` }}
             >
               {theme.icon}
